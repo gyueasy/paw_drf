@@ -9,6 +9,7 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from .models import User
 from rest_framework_simplejwt.tokens import OutstandingToken, BlacklistedToken
+from .serializers import AccountSerializer, ProfileSerializer
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
@@ -49,18 +50,6 @@ class CustomLogoutView(LogoutView):
 
         # 기본 로그아웃 동작 수행
         return Response({"detail": "로그아웃이 완료되었습니다."}, status=status.HTTP_200_OK)
-
-class AccountSerializer(serializers.ModelSerializer):
-    email = serializers.EmailField(read_only=True)
-
-    class Meta:
-        model = User
-        fields = ['id', 'nickname', 'email']
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'nickname', 'email']      
 
 class AccountView(APIView):
     permission_classes = [IsAuthenticated]
