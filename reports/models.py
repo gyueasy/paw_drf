@@ -18,20 +18,25 @@ class MainReport(models.Model):
 
 # 차트 리포트 모델
 class ChartReport(models.Model):
-    main_report = models.OneToOneField(MainReport, on_delete=models.CASCADE, related_name='chart_report')
-    technical_analysis = models.TextField()
-    candlestick_analysis = models.TextField()
-    moving_average_analysis = models.TextField()
-    bollinger_bands_analysis = models.TextField()
-    rsi_analysis = models.TextField()
-    fibonacci_retracement_analysis = models.TextField()
-    macd_analysis = models.TextField()
-    support_resistance_analysis = models.TextField()
-    chart_image = models.ImageField(upload_to='chart_images/')
-    chart_data = models.JSONField()
+    # MainReport 관계는 일시적으로 주석 처리
+    # main_report = models.OneToOneField(MainReport, on_delete=models.CASCADE, related_name='chart_report')
+    
+    image_url = models.URLField(null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    
+    technical_analysis = models.JSONField()
+    candlestick_analysis = models.JSONField()
+    moving_average_analysis = models.JSONField()
+    bollinger_bands_analysis = models.JSONField()
+    rsi_analysis = models.JSONField()
+    fibonacci_retracement_analysis = models.JSONField()
+    macd_analysis = models.JSONField()
+    support_resistance_analysis = models.JSONField()
+    
+    overall_recommendation = models.CharField(max_length=10, null=True, blank=True)
 
     def __str__(self):
-        return f"Chart Report for {self.main_report.title}"
+        return f"Chart Report at {self.timestamp}"
 
 # 뉴스 리포트 모델
 class NewsReport(models.Model):
