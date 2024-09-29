@@ -40,11 +40,11 @@ class ChartReport(models.Model):
 
 # 뉴스 리포트 모델
 class NewsReport(models.Model):
-    main_report = models.OneToOneField(MainReport, on_delete=models.CASCADE, related_name='news_report')
+    created_at = models.DateTimeField(auto_now_add=True)
     news_analysis = models.TextField()
 
     def __str__(self):
-        return f"News Report for {self.main_report.title}"
+        return f"News Report {self.id} created at {self.created_at}"
 
 # 리포트 가중치 모델
 class ReportWeights(models.Model):
