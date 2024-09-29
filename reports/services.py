@@ -11,14 +11,56 @@ from PIL import Image
 import os
 import time
 import logging
+import requests
 import io
 import base64
 import json
 from datetime import datetime
-from .gpt_prompts import get_chart_analysis_prompt, get_news_analysis_prompt
+from .gpt_prompts import get_chart_analysis_prompt, get_news_analysis_prompt, get_report_weights_prompt, get_main_report_prompt
+from .models import MainReport, ReportWeights, ChartReport, NewsReport
+
 
 
 logger = logging.getLogger(__name__)
+
+
+def get_fear_and_greed_index():
+    url = "https://api.alternative.me/fng/"
+    params = {
+        "limit": 1,  # 최신 데이터 1개만 가져옵니다.
+        "format": "json"
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # HTTP 오류가 발생하면 예외를 발생시킵니다.
+        
+        data = response.json()
+        
+        if data["metadata"]["error"]:
+            raise Exception(f"API 오류: {data['metadata']['error']}")
+        
+        fng_data = data["data"][0]
+        
+        # Unix timestamp를 datetime 객체로 변환
+        timestamp = datetime.fromtimestamp(int(fng_data["timestamp"]))
+        
+        return {
+            "value": int(fng_data["value"]),
+            "value_classification": fng_data["value_classification"],
+            "timestamp": timestamp,
+            "time_until_update": int(fng_data["time_until_update"]) if "time_until_update" in fng_data else None
+        }
+    
+    except requests.RequestException as e:
+        print(f"API 요청 중 오류 발생: {e}")
+        return None
+    except (KeyError, IndexError) as e:
+        print(f"API 응답 파싱 중 오류 발생: {e}")
+        return None
+    except Exception as e:
+        print(f"예상치 못한 오류 발생: {e}")
+        return None
 
 class ChartService:
     def __init__(self):
@@ -264,3 +306,174 @@ class OpenAIService:
         except Exception as e:
             logger.error(f"Error in analyze_news: {str(e)}")
             return {"error": f"Error analyzing news: {str(e)}"}
+        
+    def adjust_weights(self, main_report):
+        previous_reports = main_report.previous_reports
+        current_weights = main_report.latest_weights
+
+        prompt = get_report_weights_prompt(main_report, previous_reports, current_weights)
+
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an AI assistant tasked with adjusting weights for a financial report based on previous report accuracies and current market conditions."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=500,
+                n=1,
+                temperature=0.5,
+            )
+
+            gpt_response = response.choices[0].message.content.strip()
+
+            new_weights, reason = self._parse_weight_adjustment_response(gpt_response)
+
+            new_report_weights = ReportWeights(
+                main_report=main_report,
+                reason=reason,
+                **new_weights
+            )
+            new_report_weights.save()
+
+            return new_report_weights
+
+        except Exception as e:
+            print(f"GPT를 사용한 가중치 조정 중 오류 발생: {str(e)}")
+            return None
+
+    def _parse_weight_adjustment_response(self, gpt_response):
+        # GPT 응답을 파싱하는 로직 구현
+        # 예시:
+        new_weights = {
+            'overall_weight': 1.0,
+            'market_weight': 1.0,
+            # ... 다른 가중치들 ...
+        }
+        reason = "GPT가 제공한 가중치 조정 이유"
+        
+        return new_weights, reason
+    
+    def get_main_report_analysis(self, prompt, analysis_input):
+        try:
+            def json_serial(obj):
+                if isinstance(obj, datetime):
+                    return obj.isoformat()
+                raise TypeError("Type not serializable")
+
+            analysis_input_json = json.dumps(analysis_input, default=json_serial)
+
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {"role": "system", "content": "You are an AI assistant tasked with analyzing financial market data and providing investment recommendations."},
+                    {"role": "user", "content": f"{prompt}\n\nHere's the data to analyze:\n{analysis_input_json}"}
+                ],
+                max_tokens=1000,
+                n=1,
+                temperature=0.5,
+            )
+            
+            content = response.choices[0].message.content
+            return json.loads(content)
+        except Exception as e:
+            logger.error(f"Error in get_main_report_analysis: {str(e)}")
+            return {"error": f"Error analyzing main report data: {str(e)}"}
+    
+class ReportService:
+    def __init__(self):
+        self.openai_service = OpenAIService()
+
+    def preprocess_data(self, data):
+        chart_analysis = data['chart_analysis']
+        market_analysis = data['market_analysis']
+        weights = data['weights']
+
+        preprocessed_text = "Chart Analysis:\n"
+        for key, value in chart_analysis.items():
+            if isinstance(value, dict):
+                preprocessed_text += f"- {key.replace('_', ' ').title()}: {value['analysis']} (Recommendation: {value['recommendation']})\n"
+            else:
+                preprocessed_text += f"- {key.replace('_', ' ').title()}: {value}\n"
+
+        preprocessed_text += "\nMarket Analysis:\n"
+        preprocessed_text += f"- News Sentiment: {market_analysis['news_analysis']['market_sentiment']}\n"
+        preprocessed_text += "- Key Events:\n"
+        for event in market_analysis['news_analysis']['key_events'][:3]:
+            preprocessed_text += f"  * {event['title']} (Impact: {event['impact_percentage']}%)\n"
+        preprocessed_text += f"- Potential Impact: {market_analysis['news_analysis']['potential_impact']}\n"
+        preprocessed_text += "- Notable Trends:\n"
+        for trend in market_analysis['news_analysis']['notable_trends']:
+            preprocessed_text += f"  * {trend}\n"
+        
+        fng = market_analysis['fear_and_greed_index']
+        preprocessed_text += f"- Fear and Greed Index: {fng['value']} ({fng['value_classification']})\n"
+
+        preprocessed_text += f"\nWeights: {weights}\n"
+
+        return preprocessed_text
+
+    def create_main_report(self):
+        latest_chart_report = ChartReport.objects.latest('timestamp')
+        latest_news_report = NewsReport.objects.latest('created_at')
+        latest_weights = ReportWeights.objects.latest('created_at') if ReportWeights.objects.exists() else None
+        
+        fng_index = get_fear_and_greed_index()
+        
+        input_data = {
+            "chart_analysis": {
+                "technical_analysis": latest_chart_report.technical_analysis,
+                "candlestick_analysis": latest_chart_report.candlestick_analysis,
+                "moving_average_analysis": latest_chart_report.moving_average_analysis,
+                "bollinger_bands_analysis": latest_chart_report.bollinger_bands_analysis,
+                "rsi_analysis": latest_chart_report.rsi_analysis,
+                "fibonacci_retracement_analysis": latest_chart_report.fibonacci_retracement_analysis,
+                "macd_analysis": latest_chart_report.macd_analysis,
+                "support_resistance_analysis": latest_chart_report.support_resistance_analysis,
+                "overall_recommendation": latest_chart_report.overall_recommendation
+            },
+            "market_analysis": {
+                "news_analysis": json.loads(latest_news_report.news_analysis),
+                "fear_and_greed_index": {
+                    "value": fng_index["value"],
+                    "value_classification": fng_index["value_classification"],
+                    "timestamp": fng_index["timestamp"].isoformat() if isinstance(fng_index["timestamp"], datetime) else fng_index["timestamp"],
+                    "time_until_update": fng_index["time_until_update"]
+                }
+            },
+            "weights": {
+                "overall_weight": latest_weights.overall_weight,
+                "market_weight": latest_weights.market_weight,
+                "news_weight": latest_weights.news_weight,
+                "chart_overall_weight": latest_weights.chart_overall_weight,
+                "chart_technical_weight": latest_weights.chart_technical_weight,
+                "chart_candlestick_weight": latest_weights.chart_candlestick_weight,
+                "chart_moving_average_weight": latest_weights.chart_moving_average_weight,
+                "chart_bollinger_bands_weight": latest_weights.chart_bollinger_bands_weight,
+                "chart_rsi_weight": latest_weights.chart_rsi_weight,
+                "chart_fibonacci_weight": latest_weights.chart_fibonacci_weight,
+                "chart_macd_weight": latest_weights.chart_macd_weight,
+                "chart_support_resistance_weight": latest_weights.chart_support_resistance_weight
+            } if latest_weights else "No previous weights available."
+        }
+        
+        preprocessed_data = self.preprocess_data(input_data)
+        prompt = get_main_report_prompt()
+        final_message = f"{prompt}\n\nHere's the data to analyze:\n{preprocessed_data}"
+        
+        # Create main_report_input.txt file
+        with open('main_report_input.txt', 'w', encoding='utf-8') as f:
+            f.write(final_message)
+        
+        gpt_response = self.openai_service.get_main_report_analysis(prompt, preprocessed_data)
+        
+        main_report = MainReport.objects.create(
+            title=gpt_response['title'],  # GPT가 생성한 제목 사용, 테스트중...
+            overall_analysis=gpt_response['overall_analysis'],
+            market_analysis=gpt_response['market_analysis'],
+            chart_analysis=gpt_response['chart_analysis'],
+            recommendation=gpt_response['recommendation'],
+            confidence_level=gpt_response['confidence_level'],
+            reasoning=gpt_response['reasoning']
+        )
+        return main_report

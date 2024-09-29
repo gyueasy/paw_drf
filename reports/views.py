@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+import requests
 from datetime import datetime
 
 # Django imports
@@ -30,8 +31,9 @@ from selenium.common.exceptions import (
 from webdriver_manager.chrome import ChromeDriverManager
 
 # Local application imports
-from .models import ChartReport, NewsReport
-from .services import OpenAIService, NewsService
+from .models import ChartReport, NewsReport, Price
+from .utils import get_current_price
+from .services import OpenAIService, NewsService, ReportService
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -142,6 +144,7 @@ class ChartCapture:
             self.perform_chart_actions()
             logger.info("차트 작업 완료")
             image_url = self.capture_and_encode_screenshot()
+            
             if image_url:
                 logger.info(f"스크린샷 캡처 완료. 이미지 URL: {image_url}")
                 return image_url
@@ -155,6 +158,14 @@ class ChartCapture:
             logger.error(f"차트 캡처 중 오류 발생: {e}")
             return None
         finally:
+            # 현재가 가져오기 및 저장
+            current_price = get_current_price()
+            if current_price:
+                Price.objects.create(
+                    market="KRW-BTC",
+                    trade_price=current_price
+                )
+            logger.info(f"현재가 저장 완료: {current_price}")
             if self.driver:
                 self.driver.quit()
 
@@ -242,4 +253,39 @@ def crawl_and_analyze_news(request):
             logger.error(f"뉴스 크롤링 및 분석 중 오류 발생: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
 
+    return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
+
+    
+
+@csrf_exempt
+def create_main_report(request):
+    if request.method == 'POST':
+        try:
+            report_service = ReportService()
+            main_report = report_service.create_main_report()
+            return JsonResponse({
+                'success': True,
+                'message': '메인 리포트가 성공적으로 생성되었습니다.',
+                'report_id': main_report.id
+            })
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+    return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
+
+@csrf_exempt
+def update_report_weights(request, report_id):
+    if request.method == 'POST':
+        try:
+            report_service = ReportService()
+            new_weights = report_service.update_report_weights(report_id)
+            if new_weights:
+                return JsonResponse({
+                    'success': True,
+                    'message': '가중치가 성공적으로 업데이트되었습니다.',
+                    'reason': new_weights.reason
+                })
+            else:
+                return JsonResponse({'error': '가중치 업데이트에 실패했습니다.'}, status=500)
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
     return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
