@@ -26,4 +26,4 @@ urlpatterns = [
     path("api/reports/", include("reports.urls")),
 ]
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) #개발모드만 사용
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

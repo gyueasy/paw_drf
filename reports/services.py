@@ -8,6 +8,7 @@ from openai import OpenAI
 import time
 import json
 
+
 class ChartService:
     def __init__(self):
         chrome_options = Options()
@@ -42,8 +43,8 @@ class OpenAIService:
     def __init__(self):
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-    def analyze_chart(self, image_path):
-        with open(image_path, "rb") as image_file:
+    def analyze_chart(self, file_path):
+        with open(file_path, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
         try:
