@@ -5,6 +5,7 @@ import logging
 import os
 import time
 import requests
+import traceback
 from datetime import datetime
 
 # Django imports
@@ -12,9 +13,11 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 # Third-party imports
 from PIL import Image
+from rest_framework import generics
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
@@ -31,9 +34,11 @@ from selenium.common.exceptions import (
 from webdriver_manager.chrome import ChromeDriverManager
 
 # Local application imports
-from .models import ChartReport, NewsReport, Price
+from .models import ChartReport, NewsReport, Price, MainReport, Accuracy, ReportWeights
 from .utils import get_current_price
-from .services import OpenAIService, NewsService, ReportService
+from .services import OpenAIService, NewsService, ReportService, RetrospectiveReportService
+from .gpt_prompts import basic_retrospective_analysis_prompt
+from .serializers import ChartReportSerializer, NewsReportSerializer, ReportWeightsSerializer, MainReportSerializer, MainReportListSerializer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -255,7 +260,33 @@ def crawl_and_analyze_news(request):
 
     return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
 
-    
+@csrf_exempt
+@require_http_methods(["POST"])
+def calculate_accuracy(request):
+    try:
+        new_accuracy = Accuracy.calculate_and_save_accuracy()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Accuracy calculated and saved successfully.',
+            'accuracy': new_accuracy.accuracy,
+            'average_accuracy': f"{new_accuracy.average_accuracy:.2f}%",
+            'recommendation': new_accuracy.recommendation,
+            'recommendation_value': new_accuracy.recommendation_value,
+            'price_change': f"{new_accuracy.price_change:.2f}%",
+            'is_correct': new_accuracy.is_correct,
+            'calculated_at': new_accuracy.calculated_at,
+            'db_stats': {
+                'main_reports_count': MainReport.objects.count(),
+                'prices_count': Price.objects.count(),
+                'accuracies_count': Accuracy.objects.count()
+            }
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
 
 @csrf_exempt
 def create_main_report(request):
@@ -263,29 +294,151 @@ def create_main_report(request):
         try:
             report_service = ReportService()
             main_report = report_service.create_main_report()
-            return JsonResponse({
-                'success': True,
-                'message': '메인 리포트가 성공적으로 생성되었습니다.',
-                'report_id': main_report.id
-            })
+            if main_report:
+                return JsonResponse({
+                    'success': True,
+                    'message': '메인 리포트가 성공적으로 생성되었습니다.',
+                    'report_id': main_report.id
+                })
+            else:
+                return JsonResponse({
+                    'success': False,
+                    'message': '메인 리포트 생성에 실패했습니다.'
+                }, status=500)
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            logger.error(f"Error in create_main_report view: {str(e)}")
+            return JsonResponse({
+                'success': False,
+                'message': f'메인 리포트 생성 중 오류가 발생했습니다: {str(e)}'
+            }, status=500)
     return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
 
+# @csrf_exempt
+# def create_and_analyze_retrospective_report(request):
+#     if request.method == 'POST':
+#         try:
+#             # 회고 분석 보고서 생성 및 가중치 업데이트
+#             new_weights, message = RetrospectiveReportService.create_and_update_retrospective_report()
+
+#             # MainReport가 없을 경우 기본값을 설정
+#             try:
+#                 prompt, main_report = RetrospectiveReportService.create_retrospective_prompt()
+#             except MainReport.DoesNotExist:
+#                 prompt = basic_retrospective_analysis_prompt()  # 기본 프롬프트 호출
+#                 main_report = None  # MainReport가 없을 경우 None으로 처리
+
+#             # 프롬프트 저장
+#             logger.info(f"Retrospective Prompt: {prompt}")
+#             with open('retrospective_prompt.txt', 'w', encoding='utf-8') as prompt_file:
+#                 prompt_file.write(prompt)
+
+#             if new_weights:
+#                 # OpenAI 응답 저장
+#                 openai_service = OpenAIService()
+#                 logger.info("Calling analyze_retrospective_report")
+#                 analysis_result = openai_service.analyze_retrospective_report(prompt)
+#                 logger.info("Completed analyze_retrospective_report call")
+#                 logger.info(f"Analysis Result to be saved: {analysis_result}")
+
+#                 # 분석 보고서 파일에 OpenAI 응답을 저장
+#                 with open('retrospective_report.txt', 'w', encoding='utf-8') as report_file:
+#                     report_file.write(f"OpenAI 응답: {analysis_result}\n\n")
+                    
+#                     # JSON 응답이 제대로 파싱되었다면 추가 내용을 파일에 저장
+#                     if isinstance(analysis_result, dict) and 'weight_adjustments' in analysis_result:
+#                         analysis_report = f"새로운 가중치 업데이트:\n{json.dumps(analysis_result['weight_adjustments'], indent=4)}\n"
+#                         report_file.write(analysis_report)
+#                     else:
+#                         logger.error("Invalid analysis result format.")
+
+#                 return JsonResponse({
+#                     'success': True,
+#                     'message': '회고 분석 보고서가 생성되고 가중치가 업데이트되었습니다.',
+#                     'new_weights': {
+#                         'overall_weight': new_weights.overall_weight,
+#                         'fear_greed_index_weight': new_weights.fear_greed_index_weight,
+#                         'news_weight': new_weights.news_weight,
+#                         'chart_overall_weight': new_weights.chart_overall_weight,
+#                         'chart_technical_weight': new_weights.chart_technical_weight,
+#                         'chart_candlestick_weight': new_weights.chart_candlestick_weight,
+#                         'chart_moving_average_weight': new_weights.chart_moving_average_weight,
+#                         'chart_bollinger_bands_weight': new_weights.chart_bollinger_bands_weight,
+#                         'chart_rsi_weight': new_weights.chart_rsi_weight,
+#                         'chart_fibonacci_weight': new_weights.chart_fibonacci_weight,
+#                         'chart_macd_weight': new_weights.chart_macd_weight,
+#                         'chart_support_resistance_weight': new_weights.chart_support_resistance_weight,
+#                     }
+#                 })
+#             else:
+#                 return JsonResponse({'error': message}, status=500)
+
+#         except Exception as e:
+#             error_trace = traceback.format_exc()
+#             logger.error(f"회고 분석 및 가중치 업데이트 중 오류 발생: {str(e)}")
+#             logger.error(f"Traceback: {error_trace}")
+#             return JsonResponse({
+#                 'success': False,
+#                 'error': str(e),
+#                 'traceback': error_trace
+#             }, status=500)
+
+#     return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
+
 @csrf_exempt
-def update_report_weights(request, report_id):
+def create_and_analyze_retrospective_report(request):
     if request.method == 'POST':
         try:
-            report_service = ReportService()
-            new_weights = report_service.update_report_weights(report_id)
+            prompt, main_report_id = RetrospectiveReportService.create_retrospective_prompt()
+            
+            openai_service = OpenAIService()
+            analysis_result = openai_service.analyze_retrospective_report(prompt)
+            
+            if 'error' in analysis_result:
+                logger.error(f"Error in OpenAI analysis: {analysis_result['error']}")
+                return JsonResponse({'error': analysis_result['error']}, status=500)
+            
+            new_weights, message = RetrospectiveReportService.analyze_and_update_weights(analysis_result, main_report_id)
+            
             if new_weights:
                 return JsonResponse({
                     'success': True,
-                    'message': '가중치가 성공적으로 업데이트되었습니다.',
-                    'reason': new_weights.reason
+                    'message': '회고 분석 보고서가 생성되고 가중치가 업데이트되었습니다.',
+                    'new_weights': new_weights.to_dict(),
+                    'main_report_id': main_report_id
                 })
             else:
-                return JsonResponse({'error': '가중치 업데이트에 실패했습니다.'}, status=500)
+                logger.error(f"Weight update failed: {message}")
+                return JsonResponse({'error': message}, status=500)
+        
         except Exception as e:
-            return JsonResponse({'error': str(e)}, status=500)
+            logger.error(f"회고 분석 및 가중치 업데이트 중 오류 발생: {str(e)}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return JsonResponse({
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }, status=500)
+
     return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
+
+class ChartReportDetailAPIView(generics.RetrieveAPIView):
+    queryset = ChartReport.objects.all()
+    serializer_class = ChartReportSerializer
+
+class NewsReportDetailAPIView(generics.RetrieveAPIView):
+    queryset = NewsReport.objects.all()
+    serializer_class = NewsReportSerializer
+
+class ReportWeightsDetailAPIView(generics.RetrieveAPIView):
+    queryset = ReportWeights.objects.all()
+    serializer_class = ReportWeightsSerializer
+
+class MainReportDetailAPIView(generics.RetrieveAPIView):
+    queryset = MainReport.objects.all()
+    serializer_class = MainReportSerializer
+
+    def get_queryset(self):
+        return MainReport.objects.all().select_related('chart_report', 'news_report', 'weights')
+    
+class MainReportListAPIView(generics.ListAPIView):
+    queryset = MainReport.objects.all().order_by('-created_at')
+    serializer_class = MainReportListSerializer

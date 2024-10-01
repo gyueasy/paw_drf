@@ -1,50 +1,42 @@
-import os
-import sys
-import django
-
-# Django 설정 파일 경로 설정
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "paw_drf.settings")
-django.setup()
-
 from django.test import TestCase
-from reports.models import Price
-from reports.utils import get_current_price
+from .models import MainReport, Price, Accuracy
 
-class PriceTestCase(TestCase):
-    def test_get_and_save_current_price(self):
-        # 현재가 가져오기
-        current_price = get_current_price()
-        self.assertIsNotNone(current_price)
-        
-        # 현재가 저장하기
-        price = Price.objects.create(
-            market="KRW-BTC",
-            trade_price=current_price
+class ReportModelTests(TestCase):
+
+    def setUp(self):
+        # 테스트 데이터 삽입
+        self.main_report = MainReport.objects.create(
+            recommendation="Hold, 70",
+            # 기타 필드도 필요한 경우 추가
         )
-        
-        # 저장된 가격 확인
-        saved_price = Price.objects.first()
-        self.assertEqual(saved_price.market, "KRW-BTC")
-        self.assertEqual(saved_price.trade_price, current_price)
 
-    def test_multiple_prices(self):
-        # 여러 번 가격 저장하기
-        for _ in range(5):
-            current_price = get_current_price()
-            Price.objects.create(
-                market="KRW-BTC",
-                trade_price=current_price
-            )
-        
-        # 저장된 가격 개수 확인
-        self.assertEqual(Price.objects.count(), 5)
+        self.price_current = Price.objects.create(
+            market="KRW-BTC",
+            trade_price=86408000.00000000
+        )
 
-    def test_invalid_market(self):
-        # 잘못된 마켓 코드로 테스트
-        invalid_price = get_current_price("INVALID-MARKET")
-        self.assertIsNone(invalid_price)
+        self.price_previous = Price.objects.create(
+            market="KRW-BTC",
+            trade_price=86603000.00000000
+        )
 
-if __name__ == '__main__':
-    from django.core.management import execute_from_command_line
-    execute_from_command_line(sys.argv)
+        self.accuracy = Accuracy.objects.create(
+            main_report=self.main_report,
+            price=self.price_current,
+            accuracy=1.0  # 적중률 설정 (예시)
+        )
+
+    def test_accuracy_creation(self):
+        # Accuracy 인스턴스가 잘 생성되었는지 확인
+        self.assertEqual(self.accuracy.main_report, self.main_report)
+        self.assertEqual(self.accuracy.price, self.price_current)
+        self.assertEqual(self.accuracy.accuracy, 1.0)
+
+    def test_price_creation(self):
+        # Price 인스턴스가 잘 생성되었는지 확인
+        self.assertEqual(self.price_current.trade_price, 86408000.00000000)
+        self.assertEqual(self.price_previous.trade_price, 86603000.00000000)
+
+    def test_main_report_recommendation(self):
+        # MainReport의 추천을 확인
+        self.assertEqual(self.main_report.recommendation, "Hold, 70")

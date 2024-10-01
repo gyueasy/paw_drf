@@ -1,3 +1,4 @@
+
 def get_chart_analysis_prompt():
     return """
     You are an expert Bitcoin analyst with deep knowledge of technical analysis and chart patterns. Always respond in valid JSON format.
@@ -35,11 +36,70 @@ def get_news_analysis_prompt():
     Please exclude any news articles that contain baseless or irrelevant predictions about the crypto market. Only include articles that have meaningful insights or credible data to support
     """
 
-def get_report_weights_prompt():
-    return """
-    나는 너에게 너가 판단한 가중치, 최근 너의 분석값에 대한 적중률을 제공할 것이다.
-    참고할 수 있도록 나는 너에게 이전 판단 근거를 추가로 제공할 것이다.
-    이를 근거로 너는 가중치를 조정해야 한다.
+def get_retrospective_analysis_prompt_template():
+    return """Current Price: {current_price}
+Previous Price: {previous_price}
+Price Change: {price_change}
+Latest Recommendation: {recommendation} ({recommendation_value})
+Prediction Correct: {is_correct}
+Current Accuracy: {current_accuracy}
+Average Accuracy (7d): {avg_accuracy}
+
+Previous Analysis:
+Recommendation: {main_report.recommendation}
+Confidence Level: {main_report.confidence_level}
+Reasoning: {main_report.reasoning}
+Overall Analysis: {main_report.overall_analysis}
+Market Analysis: {main_report.market_analysis}
+Chart Analysis: {main_report.chart_analysis}
+
+Compare your previous analysis and recommendation with the actual price change. Based on this comparison, please adjust the following 12 weights:
+
+{{
+    "analysis": "Your analysis of the comparison between prediction and actual result",
+    "weight_adjustments": {{
+        "overall_weight": 0.0,
+        "fear_greed_index_weight": 0.0,
+        "news_weight": 0.0,
+        "chart_overall_weight": 0.0,
+        "chart_technical_weight": 0.0,
+        "chart_candlestick_weight": 0.0,
+        "chart_moving_average_weight": 0.0,
+        "chart_bollinger_bands_weight": 0.0,
+        "chart_rsi_weight": 0.0,
+        "chart_fibonacci_weight": 0.0,
+        "chart_macd_weight": 0.0,
+        "chart_support_resistance_weight": 0.0
+    }},
+    "reasoning": "Provide a single reason for all weight adjustments",
+    "overall_retrospective": "Overall thoughts on the performance and suggestions for improvement"
+}}
+
+The sum of all weights must always equal 100%. Please provide your adjustments directly in the format above.
+"""
+
+def basic_retrospective_analysis_prompt():
+    return """{
+        "summary_line": "Current Price: {current_price}",
+        "analysis": "Your analysis of the comparison between prediction and actual result",
+        "weight_adjustments": {
+            "overall_weight": 0.0,
+            "fear_greed_index_weight": 0.0,
+            "news_weight": 0.0,
+            "chart_overall_weight": 0.0,
+            "chart_technical_weight": 0.0,
+            "chart_candlestick_weight": 0.0,
+            "chart_moving_average_weight": 0.0,
+            "chart_bollinger_bands_weight": 0.0,
+            "chart_rsi_weight": 0.0,
+            "chart_fibonacci_weight": 0.0,
+            "chart_macd_weight": 0.0,
+            "chart_support_resistance_weight": 0.0
+        },
+        "reasoning": "Provide a single reason for all weight adjustments",
+        "overall_retrospective": "Overall thoughts on the performance and suggestions for improvement"
+    }
+    The sum of all weights must always equal 100%. Please provide your adjustments directly in the format above.
     """
 
 def get_main_report_prompt():
@@ -55,7 +115,7 @@ def get_main_report_prompt():
     Please provide your analysis, recommendation, and title in the following format:
     
     {
-        "title": "A catchy and informative title for the report",
+        "title": "A catchy and informative title for the report, short and to the point",
         "overall_analysis": "analysis",
         "market_analysis": "analysis",
         "chart_analysis": "analysis",
@@ -63,6 +123,5 @@ def get_main_report_prompt():
         "confidence_level": "A brief explanation of your recommendation and confidence level",
         "reasoning": "Your reasoning for the recommendation"
     }
-    Please respond with the content in Korean only.
     If there are any numbers that should be referenced in the chart, please make sure to include them in the report.
     """
