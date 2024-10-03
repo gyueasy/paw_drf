@@ -10,7 +10,7 @@ class IPCheckMiddleware:
             path = request.path
             if any(path.startswith(p) for p in settings.IP_CHECK_PATHS):
                 user_ip = self.get_client_ip(request)
-                if user_ip not in settings.ALLOWED_IPS:
+                if user_ip not in settings.ALLOWED_IPS and user_ip != request.get_host().split(':')[0]:
                     raise PermissionDenied
 
         response = self.get_response(request)
