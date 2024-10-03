@@ -30,9 +30,13 @@ OPENAI_API_KEY = config.OPENAI_API_KEY
 DEBUG = False
 # DEBUG = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127,0,0,1',
+    '13.125.30.223',
+]
 
-ALLOWED_IPS = ['127.0.0.1', '서버_IP_주소1', '서버_IP_주소2']
+ALLOWED_IPS = ['127.0.0.1', '13.125.30.223', 'localhost']
 # ALLOWED_IPS = ['1.1.1.1', '2.2.2.2'] #테스트용
 IP_CHECK_PATHS = [
     '/api/reports/accuracy/',
