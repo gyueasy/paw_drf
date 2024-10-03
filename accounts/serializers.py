@@ -33,8 +33,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     
 class CommentSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
+    report = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Comment
         fields = ['id', 'user', 'report', 'content', 'created_at', 'updated_at']
-        read_only_fields = ['user', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'report', 'created_at', 'updated_at']

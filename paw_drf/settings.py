@@ -27,9 +27,13 @@ SECRET_KEY = config.DJANGO_SECRET_KEY
 OPENAI_API_KEY = config.OPENAI_API_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
+# DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
+
+# Timezone settings
+SCHEDULER_TIMEZONE = "Asia/Seoul"
 
 CSRF_USE_SESSIONS = True
 CSRF_COOKIE_SECURE = False
@@ -47,6 +51,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django_json_widget',
+    'django_extensions',
     # Third-party apps
     'allauth',
     'allauth.account',
@@ -61,7 +66,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # Local apps
     'accounts',
-    'reports',
+    'reports.apps.ReportsConfig',
     
 ]
 
