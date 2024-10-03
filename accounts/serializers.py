@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User
+from .models import User, Comment
 from .validators import validate_nickname
 
 class AccountSerializer(serializers.ModelSerializer):
@@ -30,3 +30,11 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
         return user
+    
+class CommentSerializer(serializers.ModelSerializer):
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'user', 'report', 'content', 'created_at', 'updated_at']
+        read_only_fields = ['user', 'created_at', 'updated_at']

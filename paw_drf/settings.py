@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.sites',
+    'django_json_widget',
     # Third-party apps
     'allauth',
     'allauth.account',

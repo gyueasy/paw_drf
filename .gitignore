@@ -5,6 +5,7 @@
 config.py
 *.key
 *.crt
+*.txt
 
 ### Django ###
 *.log
