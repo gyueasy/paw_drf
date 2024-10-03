@@ -1,5 +1,4 @@
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 import json
 
@@ -13,7 +12,6 @@ class IPCheckMiddleware:
             if any(path.startswith(p) for p in settings.IP_CHECK_PATHS):
                 user_ip = self.get_client_ip(request)
                 if user_ip not in settings.ALLOWED_IPS and user_ip != request.get_host().split(':')[0]:
-                    # PermissionDenied 예외 대신 JSON 응답 반환
                     return HttpResponse(
                         json.dumps({
                             'error': 'Access Denied',
@@ -27,7 +25,8 @@ class IPCheckMiddleware:
                         content_type='application/json',
                         status=403
                     )
-
+        
+        print(f"Debug: Request passed IP check. Path: {request.path}, IP: {self.get_client_ip(request)}")
         response = self.get_response(request)
         return response
 
