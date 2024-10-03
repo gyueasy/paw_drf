@@ -94,7 +94,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
-    'paw_drf.middleware.IPCheckMiddleware',
+    # 'paw_drf.middleware.IPCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'paw_drf.urls'
