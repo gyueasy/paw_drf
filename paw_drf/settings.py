@@ -253,6 +253,7 @@ LOGGING = {
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'static'
 
 # Media files
 BASE_DIR = Path(__file__).resolve().parent.parent
