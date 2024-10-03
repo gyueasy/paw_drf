@@ -15,11 +15,11 @@ from accounts.views import CommentView, LikeView
 
 urlpatterns = [
     #보고서 생성
-    path('capture-and-analyze-chart/', capture_and_analyze_chart, name='capture_chart'),
-    path('crawl-and-analyze-news/', crawl_and_analyze_news, name='crawl_and_analyze_news'),
-    path('create-main-report/', create_main_report, name='create_main_report'),
-    path('calculate-accuracy/', calculate_accuracy, name='calculate_accuracy'),
-    path('retrospective-report/', create_and_analyze_retrospective_report, name='create_and_analyze_retrospective_report'),
+    path('chart/', capture_and_analyze_chart, name='capture_chart'),
+    path('news/', crawl_and_analyze_news, name='crawl_and_analyze_news'),
+    path('main/', create_main_report, name='create_main_report'),
+    path('accuracy/', calculate_accuracy, name='calculate_accuracy'),
+    path('retrospective/', create_and_analyze_retrospective_report, name='create_and_analyze_retrospective_report'),
     #보고서 조회
     path('chart-report/<int:pk>/', ChartReportDetailAPIView.as_view(), name='chart_detail'),
     path('news-report/<int:pk>/', NewsReportDetailAPIView.as_view(), name='news_detail'),

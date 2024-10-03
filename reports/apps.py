@@ -41,8 +41,8 @@ class ReportsConfig(AppConfig):
 
         scheduler.add_job(
             generate_reports,
-            # trigger=CronTrigger(hour="0,8,16", minute="30"),
-            trigger=CronTrigger(minute="*/3"),  # Test
+            trigger=CronTrigger(hour="0,8,16", minute="30"),
+            # trigger=CronTrigger(minute="*/3"),  # Test
             id="generate_reports",
             max_instances=1,
             replace_existing=True,
