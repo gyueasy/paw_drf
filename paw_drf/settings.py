@@ -32,11 +32,21 @@ DEBUG = False
 
 ALLOWED_HOSTS = ['*']
 
+ALLOWED_IPS = ['127.0.0.1', '서버_IP_주소1', '서버_IP_주소2']
+# ALLOWED_IPS = ['1.1.1.1', '2.2.2.2'] #테스트용
+IP_CHECK_PATHS = [
+    '/api/reports/accuracy/',
+    '/api/reports/chart/',
+    '/api/reports/main/',
+    '/api/reports/news/',
+    '/api/reports/retrospective/',
+]
+
 # Timezone settings
 SCHEDULER_TIMEZONE = "Asia/Seoul"
 
 CSRF_USE_SESSIONS = True
-CSRF_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://127.0.0.1:8000']
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -78,7 +88,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'allauth.account.middleware.AccountMiddleware', 
+    'allauth.account.middleware.AccountMiddleware',
+    'paw_drf.middleware.IPCheckMiddleware',
 ]
 
 ROOT_URLCONF = 'paw_drf.urls'
@@ -105,10 +116,21 @@ WSGI_APPLICATION = 'paw_drf.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': BASE_DIR / 'db.sqlite3',
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': config.DB_NAME,
+        'USER': config.DB_USER,
+        'PASSWORD': config.DB_PASSWORD,
+        'HOST': config.DB_HOST,
+        'PORT': config.DB_PORT,
     }
 }
 
@@ -189,6 +211,38 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
+
+# Logging
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'DEBUG',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'paw_drf': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+        'reports': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False,
+        },
+    },
+}
 
 
 # Static files (CSS, JavaScript, Images)
