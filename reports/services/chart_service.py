@@ -43,12 +43,12 @@ class ChartCapture:
     #         service = Service(ChromeDriverManager().install())
     #         self.driver = webdriver.Chrome(service=service, options=chrome_options)
     #         return self.driver
-    #     except Exception as e:
+    #     except Exception as e:g
     #         logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
     #         raise
 
     # EC2 서버용
-    def create_driver():
+    def create_driver(self):
         logger.info("ChromeDriver 설정 중...")
         try:
             chrome_options = Options()
