@@ -3,6 +3,7 @@ import os
 import time
 import logging
 import io
+import traceback
 from datetime import datetime
 
 # 서드파티 라이브러리
@@ -48,7 +49,7 @@ class ChartCapture:
     #         raise
 
     # EC2 서버용
-    def create_driver():
+    def create_driver(self):
         logger.info("ChromeDriver 설정 중...")
         try:
             chrome_options = Options()
@@ -60,23 +61,23 @@ class ChartCapture:
             service = Service('/usr/bin/chromedriver')  # Specify the path to the ChromeDriver executable
 
             # Initialize the WebDriver with the specified options
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-
-            return driver
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            return self.driver
+        
         except Exception as e:
             logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
             raise
 
     def capture_chart(self):
         try:
-            self.create_driver()
+            self.driver = self.create_driver()
             self._navigate_to_chart()
             self._perform_chart_actions()
             image_url = self._capture_and_save_screenshot()
             self._save_current_price()
             return image_url
         except Exception as e:
-            logger.error(f"차트 캡처 중 오류 발생: {e}")
+            logger.error(f"차트 캡처 중 오류 발생: {e}\n{traceback.format_exc()}")
             return None
         finally:
             self._quit_driver()
@@ -212,5 +213,5 @@ class ChartService:
             }
 
         except Exception as e:
-            logger.error(f"차트 캡처 및 분석 중 오류 발생: {str(e)}")
+            logger.error(f"차트 캡처 중 오류 발생: {e}\n{traceback.format_exc()}")
             return {'error': str(e)}
