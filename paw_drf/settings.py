@@ -33,10 +33,10 @@ DEBUG = False
 ALLOWED_HOSTS = [
     'localhost',
     '127.0,0,1',
-    '13.125.30.223',
+    '13.125.198.155',
 ]
 
-ALLOWED_IPS = ['127.0.0.1', '13.125.30.223', 'localhost']
+ALLOWED_IPS = ['127.0.0.1', '13.125.198.155', 'localhost']
 # 13.125.30.223 aws 서버 ip
 # ALLOWED_IPS = ['1.1.1.1', '2.2.2.2'] #테스트용
 IP_CHECK_PATHS = [
