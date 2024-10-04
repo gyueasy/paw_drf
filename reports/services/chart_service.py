@@ -150,7 +150,7 @@ class ChartCapture:
 
             for indicator_xpath, indicator_name in indicators:
                 self._click_element_by_xpath(
-                    "//cq-menu[@class='ciq-menu ciq-studies']",
+                    "/html/body/div[1]/div[3]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]",
                     "지표 메뉴"
                 )
                 self._click_indicator_option(indicator_xpath, indicator_name)
