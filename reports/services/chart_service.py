@@ -87,7 +87,7 @@ class ChartCapture:
         logger.info("페이지 로드 완료")
         time.sleep(10)
 
-    def _click_element_by_xpath(self, xpath, element_name, wait_time=30):
+    def _click_element_by_xpath(self, xpath, element_name, wait_time=20):
         logger.debug(f"Trying to click on element: {element_name} with XPath: {xpath}")
         try:
             logger.debug(f"Waiting for element to be clickable...")
@@ -134,17 +134,17 @@ class ChartCapture:
                 "//cq-item[./translate[text()='1시간']]",
                 "1시간 옵션"
             )
-            self._click_element_by_xpath(
-                "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/span",
-                "차트설정"
-            )
-            dark_theme_xpath = "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/cq-menu-dropdown/cq-themes/cq-themes-builtin/cq-item[2]"
-            self._click_indicator_option(dark_theme_xpath, "다크테마")
+            # self._click_element_by_xpath(
+            #     "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/span",
+            #     "차트설정"
+            # )
+            # dark_theme_xpath = "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/cq-menu-dropdown/cq-themes/cq-themes-builtin/cq-item[2]"
+            # self._click_indicator_option(dark_theme_xpath, "다크테마")
 
             indicators = [
                 ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[15]", "볼린저 밴드"),
-                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[81]", "RSI"),
-                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[53]", "MACD")
+                # ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[81]", "RSI"),
+                # ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[53]", "MACD")
             ]
 
             for indicator_xpath, indicator_name in indicators:
