@@ -58,7 +58,7 @@ class ChartCapture:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
 
-            service = Service('/usr/bin/chromedriver')  # Specify the path to the ChromeDriver executable
+            service = Service('/usr/local/bin/chromedriver')  # Specify the path to the ChromeDriver executable
 
             # Initialize the WebDriver with the specified options
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
