@@ -88,15 +88,19 @@ class ChartCapture:
         time.sleep(10)
 
     def _click_element_by_xpath(self, xpath, element_name, wait_time=30):
+        logger.debug(f"Trying to click on element: {element_name} with XPath: {xpath}")
         try:
+            logger.debug(f"Waiting for element to be clickable...")
             element = WebDriverWait(self.driver, wait_time).until(
                 EC.element_to_be_clickable((By.XPATH, xpath))
             )
+            logger.debug(f"Element found: {element_name}")
+            
             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
             element.click()
             logger.info(f"{element_name} 클릭 완료")
             WebDriverWait(self.driver, 2).until(
-                EC.staleness_of(element)  # 클릭 후 요소가 더 이상 DOM에 없기를 기다림
+                EC.staleness_of(element)
             )
         except TimeoutException:
             logger.error(f"{element_name} 클릭을 기다리는 중 타임아웃 발생")
