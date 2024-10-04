@@ -93,10 +93,13 @@ class ChartCapture:
                 EC.element_to_be_clickable((By.XPATH, xpath))
             )
             self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-            time.sleep(1)
             element.click()
             logger.info(f"{element_name} 클릭 완료")
-            time.sleep(2)
+            WebDriverWait(self.driver, 2).until(
+                EC.staleness_of(element)  # 클릭 후 요소가 더 이상 DOM에 없기를 기다림
+            )
+        except TimeoutException:
+            logger.error(f"{element_name} 클릭을 기다리는 중 타임아웃 발생")
         except Exception as e:
             logger.error(f"{element_name} 클릭 중 오류 발생: {e}")
             raise
@@ -118,33 +121,38 @@ class ChartCapture:
             logger.error(f"{indicator_name} 옵션 클릭 중 오류 발생: {e}")
 
     def _perform_chart_actions(self):
-        self._click_element_by_xpath(
-            "//cq-menu[@class='ciq-menu ciq-period']",
-            "시간 메뉴"
-        )
-        self._click_element_by_xpath(
-            "//cq-item[./translate[text()='1시간']]",
-            "1시간 옵션"
-        )
-        self._click_element_by_xpath(
-            "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/span",
-            "차트설정"
-        )
-        dark_theme_xpath = "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/cq-menu-dropdown/cq-themes/cq-themes-builtin/cq-item[2]"
-        self._click_indicator_option(dark_theme_xpath, "다크테마")
-
-        indicators = [
-            ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[15]", "볼린저 밴드"),
-            ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[81]", "RSI"),
-            ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[53]", "MACD")
-        ]
-
-        for indicator_xpath, indicator_name in indicators:
+        try:
             self._click_element_by_xpath(
-                "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]",
-                "지표 메뉴"
+                "//cq-menu[@class='ciq-menu ciq-period']",
+                "시간 메뉴"
             )
-            self._click_indicator_option(indicator_xpath, indicator_name)
+            self._click_element_by_xpath(
+                "//cq-item[./translate[text()='1시간']]",
+                "1시간 옵션"
+            )
+            self._click_element_by_xpath(
+                "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/span",
+                "차트설정"
+            )
+            dark_theme_xpath = "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/cq-menu-dropdown/cq-themes/cq-themes-builtin/cq-item[2]"
+            self._click_indicator_option(dark_theme_xpath, "다크테마")
+
+            indicators = [
+                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[15]", "볼린저 밴드"),
+                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[81]", "RSI"),
+                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[53]", "MACD")
+            ]
+
+            for indicator_xpath, indicator_name in indicators:
+                self._click_element_by_xpath(
+                    "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]",
+                    "지표 메뉴"
+                )
+                self._click_indicator_option(indicator_xpath, indicator_name)
+
+        except Exception as e:
+            logger.error(f"차트 액션 수행 중 오류 발생: {e}")
+            raise
 
     def _capture_and_save_screenshot(self):
         try:
