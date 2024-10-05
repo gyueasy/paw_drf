@@ -31,6 +31,7 @@ DEBUG = False
 # DEBUG = True
 
 ALLOWED_HOSTS = [
+    'predictwise.site'
     'localhost',
     '127.0,0,1',
     '13.125.198.155',
@@ -49,6 +50,10 @@ IP_CHECK_PATHS = [
 
 # Timezone settings
 SCHEDULER_TIMEZONE = "Asia/Seoul"
+
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
 
 CSRF_USE_SESSIONS = True
 CSRF_COOKIE_SECURE = True
