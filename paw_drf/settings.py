@@ -121,6 +121,7 @@ WSGI_APPLICATION = 'paw_drf.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
+# 개발환경 SQLITE
 # DATABASES = {
 #     'default': {
 #         'ENGINE': 'django.db.backends.sqlite3',
@@ -128,6 +129,7 @@ WSGI_APPLICATION = 'paw_drf.wsgi.application'
 #     }
 # }
 
+# 배포환경 PostgreSQL
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
