@@ -1,70 +1,263 @@
-'''
-Oct 04 21:35:43 ip-172-31-10-97 gunicorn[15040]: Element found: 시간 메뉴
-Oct 04 21:35:43 ip-172-31-10-97 gunicorn[15040]: 시간 메뉴 클릭 완료
-Oct 04 21:35:45 ip-172-31-10-97 gunicorn[15040]: 시간 메뉴 클릭을 기다리는 중 타임아웃 발생
-Oct 04 21:35:45 ip-172-31-10-97 gunicorn[15040]: Trying to click on element: 1시간 옵션 with XPath: //cq-item[./translate[text()='1시간']]
-Oct 04 21:35:45 ip-172-31-10-97 gunicorn[15040]: Element found: 1시간 옵션
-Oct 04 21:35:45 ip-172-31-10-97 gunicorn[15040]: 1시간 옵션 클릭 완료
-Oct 04 21:35:47 ip-172-31-10-97 gunicorn[15040]: 1시간 옵션 클릭을 기다리는 중 타임아웃 발생
-Oct 04 21:35:47 ip-172-31-10-97 gunicorn[15040]: Trying to click on element: 차트설정 with XPath: //*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/span
-Oct 04 21:35:47 ip-172-31-10-97 gunicorn[15040]: Element found: 차트설정
-Oct 04 21:35:48 ip-172-31-10-97 gunicorn[15040]: 차트설정 클릭 완료
-Oct 04 21:35:50 ip-172-31-10-97 gunicorn[15040]: 차트설정 클릭을 기다리는 중 타임아웃 발생
-Oct 04 21:35:50 ip-172-31-10-97 gunicorn[15040]: 다크테마 옵션 클릭 완료
+from django.test import TestCase
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException, WebDriverException
+from webdriver_manager.chrome import ChromeDriverManager
+import time
+import logging
+import os
+from PIL import Image
+import io
 
-여기까지 진행됨. 그런데 차트 설정창이 닫히지 않았네. 여기서부터 큰 문제가 발생했네.
-아래는 내가 새로 xpath를 찾아본거야
-시간메뉴 : //*[@id="fullChartiq"]/div/div/div[1]/div/div/cq-menu[1]/span/cq-clickable
-1시간 : //*[@id="fullChartiq"]/div/div/div[1]/div/div/cq-menu[1]/cq-menu-dropdown/cq-item[8]/translate
-차트설정 : //*[@id="fullChartiq"]/div/div/div[1]/div/div/cq-menu[2]/span/translate
-지표 : //*[@id="fullChartiq"]/div/div/div[1]/div/div/cq-menu[3]/span/translate
+logger = logging.getLogger(__name__)
 
-'''
+class ChartCaptureTest(TestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.driver = cls.create_driver()
 
-    # #ec2 서버용
-    # def _capture_and_save_screenshot(self):
-    #     try:
-    #         # 페이지가 완전히 로드될 때까지 대기
-    #         WebDriverWait(self.driver, 20).until(
-    #             EC.presence_of_element_located((By.XPATH, '//*[@id="fullChartiq"]/div/div'))
-    #         )
+    @classmethod
+    def tearDownClass(cls):
+        if cls.driver:
+            cls.driver.quit()
+        super().tearDownClass()
 
-    #         # 차트 요소 찾기
-    #         chart_element = self.driver.find_element(By.XPATH, '//*[@id="fullChartiq"]/div/div')
+    @staticmethod
+    def create_driver():
+        logger.info("ChromeDriver 설정 중...")
+        try:
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
 
-    #         # 차트 요소의 크기 가져오기
-    #         size = chart_element.size
+            service = Service(ChromeDriverManager().install())
+
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            return driver
+        except Exception as e:
+            logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
+            raise
+
+    @staticmethod
+    def wait_and_click(driver, by, value, element_name, wait_time=30):
+        try:
+            element = WebDriverWait(driver, wait_time).until(
+                EC.presence_of_element_located((by, value))
+            )
+            driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            time.sleep(2)  # 스크롤 후 잠시 대기
+            element = WebDriverWait(driver, wait_time).until(
+                EC.element_to_be_clickable((by, value))
+            )
+            element.click()
+            logger.info(f"{element_name} 클릭 완료")
+            time.sleep(2)  # 클릭 후 잠시 대기
+        except TimeoutException:
+            logger.error(f"{element_name} 요소를 찾는 데 시간이 초과되었습니다.")
+            driver.save_screenshot(f"error_{element_name}.png")
+            raise
+        except ElementClickInterceptedException:
+            logger.error(f"{element_name} 요소를 클릭할 수 없습니다. 다른 요소에 가려져 있을 수 있습니다.")
+            driver.save_screenshot(f"error_{element_name}.png")
+            raise
+        except NoSuchElementException:
+            logger.error(f"{element_name} 요소를 찾을 수 없습니다.")
+            driver.save_screenshot(f"error_{element_name}.png")
+            raise
+        except Exception as e:
+            logger.error(f"{element_name} 클릭 중 오류 발생: {e}")
+            driver.save_screenshot(f"error_{element_name}.png")
+            raise
+        
+    def perform_chart_actions(self):
+        try:
+            # 페이지가 완전히 로드될 때까지 대기
+            WebDriverWait(self.driver, 60).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
             
-    #         # 창 크기를 차트 크기에 맞게 조정 (높이에 여유를 두기 위해 100px 추가)
-    #         self.driver.set_window_size(size['width'], size['height'] + 100)
+            # 시간 메뉴 클릭
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[1]",
+                "시간 메뉴"
+            )
+            
+            # 1시간 옵션 선택
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[1]/cq-menu-dropdown/cq-item[8]",
+                "1시간 옵션"
+            )
 
-    #         # 차트 요소의 위치 정보 가져오기
-    #         location = chart_element.location
+            # 차트 설정 메뉴 클릭
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[2]",
+                "차트 설정"
+            )
+            # 다크모드 옵션 선택
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[2]/cq-menu-dropdown/cq-themes/cq-themes-builtin/cq-item[2]",
+                "Dark Theme"
+            )
+            
+            # 지표 메뉴 클릭
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]",
+                "지표 메뉴"
+            )
+            
+            # 볼린저 밴드 옵션 선택
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[15]",
+                "볼린저 밴드 옵션"
+            )
 
-    #         # 전체 스크린샷 찍기
-    #         png = self.driver.get_screenshot_as_png()
+            # 지표 메뉴 클릭
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]",
+                "지표 메뉴"
+            )
+            
+            # RSI 옵션 선택
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[81]",
+                "RSI 옵션"
+            )
 
-    #         # 이미지 처리
-    #         im = Image.open(io.BytesIO(png))
-    #         left = location['x']
-    #         top = location['y']
-    #         right = left + size['width']
-    #         bottom = top + size['height']
+            # 지표 메뉴 클릭
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]",
+                "지표 메뉴"
+            )
+            
+            # MACD 옵션 선택
+            self.wait_and_click(
+                self.driver,
+                By.XPATH,
+                "/html/body/div[1]/div[2]/div[3]/span/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[53]",
+                "MACD 옵션"
+            )
 
-    #         # 차트 부분만 크롭
-    #         im = im.crop((left, top, right, bottom))
+        except Exception as e:
+            logger.error(f"차트 조작 중 오류 발생: {e}")
+            self.driver.save_screenshot("error_chart_manipulation.png")
+            raise
 
-    #         # 이미지 저장
-    #         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    #         filename = f"chart_screenshot_{current_time}.png"
-    #         save_dir = os.path.join(settings.MEDIA_ROOT, 'capture_chart')
-    #         os.makedirs(save_dir, exist_ok=True)
-    #         file_path = os.path.join(save_dir, filename)
-    #         im.save(file_path)
+    def capture_and_encode_screenshot(self):
+        try:
+            logger.info("스크린샷 캡처 시작...")
+            # 스크린샷 캡처
+            png = self.driver.get_screenshot_as_png()
+            logger.info("스크린샷 캡처 완료")
+            
+            # PIL Image로 변환
+            img = Image.open(io.BytesIO(png))
+            logger.info("PIL Image로 변환 완료")
+            
+            # 이미지 리사이즈 (OpenAI API 제한에 맞춤)
+            img.thumbnail((2000, 2000))
+            logger.info("이미지 리사이즈 완료")
+            
+            # 현재 시간을 파일명에 포함
+            current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"upbit_chart_{current_time}.png"
+            
+            # 현재 스크립트의 경로를 가져옴
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            
+            # 파일 저장 경로 설정
+            file_path = os.path.join(script_dir, filename)
+            
+            # 이미지 파일로 저장
+            img.save(file_path)
+            logger.info(f"스크린샷이 저장되었습니다: {file_path}")
+            
+            # 이미지를 바이트로 변환
+            buffered = io.BytesIO()
+            img.save(buffered, format="PNG")
+            logger.info("이미지를 바이트로 변환 완료")
+            
+            # base64로 인코딩
+            base64_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+            logger.info("base64 인코딩 완료")
+            
+            return base64_image, file_path
+        except WebDriverException as wde:
+            logger.error(f"WebDriver 예외 발생: {wde}")
+            self.driver.save_screenshot("error_webdriver_exception.png")
+            return None, None
+        except IOError as ioe:
+            logger.error(f"I/O 예외 발생: {ioe}")
+            self.driver.save_screenshot("error_io_exception.png")
+            return None, None
+        except Exception as e:
+            logger.error(f"스크린샷 캡처 및 인코딩 중 오류 발생: {e}")
+            self.driver.save_screenshot("error_screenshot_capture.png")
+            return None, None
 
-    #         logger.info(f"스크린샷이 저장되었습니다: {file_path}")
-    #         image_url = f"{settings.MEDIA_URL}capture_chart/{filename}"
-    #         return image_url
-    #     except Exception as e:
-    #         logger.error(f"스크린샷 캡처 및 저장 중 오류 발생: {e}")
-    #         return None
+    def test_chart_capture(self):
+        base64_image = None
+        file_path = None
+        try:
+            logger.info("테스트 시작...")
+            self.driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-BTC")
+            
+            # 페이지 로드 대기
+            logger.info("페이지 로드 대기 중...")
+            WebDriverWait(self.driver, 60).until(
+                EC.presence_of_element_located((By.TAG_NAME, "cq-chart-title"))
+            )
+            logger.info("페이지 로드 완료")
+
+            self.perform_chart_actions()
+
+            base64_image, file_path = self.capture_and_encode_screenshot()
+            
+            self.assertIsNotNone(base64_image, "Screenshot was not captured successfully")
+            self.assertIsNotNone(file_path, "Screenshot file path is None")
+            self.assertTrue(os.path.exists(file_path), "Screenshot file was not saved")
+            
+            logger.info("Chart capture test completed successfully")
+
+        except AssertionError as ae:
+            logger.error(f"Assertion Error: {str(ae)}")
+            self.driver.save_screenshot("assertion_error_screenshot.png")
+            raise
+
+        except Exception as e:
+            logger.error(f"Test failed: {str(e)}")
+            self.driver.save_screenshot("error_screenshot.png")
+            raise
+
+        # finally:
+        #     # 테스트 종료 후 파일 정리
+        #     if file_path and os.path.exists(file_path):
+        #         os.remove(file_path)
+        #     for error_file in ["error_screenshot.png", "error_screenshot_capture.png", "assertion_error_screenshot.png", "error_webdriver_exception.png", "error_io_exception.png"]:
+        #         if os.path.exists(error_file):
+        #             os.remove(error_file)
