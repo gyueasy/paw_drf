@@ -32,47 +32,86 @@ class ChartCapture:
     def __init__(self):
         self.driver = None
 
-    # 로컬 개발용
-    # def create_driver(self):
-    #     logger.info("ChromeDriver 설정 중...")
-    #     try:
-    #         chrome_options = Options()
-    #         chrome_options.add_argument("--headless")
-    #         chrome_options.add_argument("--start-maximized")
-    #         chrome_options.add_argument("--no-sandbox")
-    #         chrome_options.add_argument("--disable-dev-shm-usage")
-    #         service = Service(ChromeDriverManager().install())
-    #         self.driver = webdriver.Chrome(service=service, options=chrome_options)
-    #         return self.driver
-    #     except Exception as e:
-    #         logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
-    #         raise
-
-    # EC2 서버용
     def create_driver(self):
         logger.info("ChromeDriver 설정 중...")
         try:
             chrome_options = Options()
-            chrome_options.add_argument("--headless")  # 헤드리스 모드 사용
+            chrome_options.add_argument("--headless")
             chrome_options.add_argument("--no-sandbox")
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
-            chrome_options.add_argument("--window-size=1920,1080") 
+            chrome_options.add_argument("--window-size=1920,1080")
 
-            service = Service('/usr/local/bin/chromedriver')  # Specify the path to the ChromeDriver executable
+            service = Service('/usr/local/bin/chromedriver')
 
-            # Initialize the WebDriver with the specified options
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             return self.driver
-        
         except Exception as e:
             logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
+            raise
+
+    def _click_element(self, selector, element_name, wait_time=20):
+        logger.debug(f"Trying to click on element: {element_name} with selector: {selector}")
+        try:
+            element = WebDriverWait(self.driver, wait_time).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, selector))
+            )
+            logger.debug(f"Element found: {element_name}")
+            
+            self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
+            self.driver.execute_script("arguments[0].click();", element)
+            logger.info(f"{element_name} 클릭 완료")
+            
+            WebDriverWait(self.driver, 2).until(EC.staleness_of(element))
+        except TimeoutException:
+            logger.error(f"{element_name} 클릭을 기다리는 중 타임아웃 발생")
+        except Exception as e:
+            logger.error(f"{element_name} 클릭 중 오류 발생: {e}")
+            raise
+
+    def _perform_chart_actions(self):
+        try:
+            self._click_element(
+                "#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-period",
+                "시간 메뉴"
+            )
+            self._click_element(
+                "#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-period.stxMenuActive > cq-menu-dropdown > cq-item:nth-child(10)",
+                "1시간 옵션"
+            )
+            self._click_element(
+                "#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-display.collapse",
+                "차트설정"
+            )
+            self._click_element(
+                "#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-display.collapse.stxMenuActive > cq-menu-dropdown > cq-themes > cq-themes-builtin > cq-item:nth-child(3)",
+                "다크테마"
+            )
+
+            indicators = [
+                ("#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-studies.collapse.stxMenuActive > cq-menu-dropdown > cq-scroll > cq-studies > cq-studies-content > cq-item:nth-child(15)", "볼린저 밴드"),
+                ("#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-studies.collapse.stxMenuActive > cq-menu-dropdown > cq-scroll > cq-studies > cq-studies-content > cq-item:nth-child(81)", "RSI"),
+                ("#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-studies.collapse.stxMenuActive > cq-menu-dropdown > cq-scroll > cq-studies > cq-studies-content > cq-item:nth-child(53)", "MACD")
+            ]
+            
+            for indicator_selector, indicator_name in indicators:
+                self._click_element(
+                    "#fullChartiq > div > div > div.ciq-nav > div > div > cq-menu.ciq-menu.ciq-studies.collapse",
+                    "지표 메뉴"
+                )
+                self._click_element(indicator_selector, indicator_name)
+
+        except Exception as e:
+            logger.error(f"차트 액션 수행 중 오류 발생: {e}")
             raise
 
     def capture_chart(self):
         try:
             self.driver = self.create_driver()
-            self._navigate_to_chart()
+            self.driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-BTC")
+            logger.info("페이지 로드 완료")
+            time.sleep(10)
+            
             self._perform_chart_actions()
             image_url = self._capture_and_save_screenshot()
             self._save_current_price()
@@ -83,83 +122,6 @@ class ChartCapture:
         finally:
             self._quit_driver()
 
-    def _navigate_to_chart(self):
-        self.driver.get("https://upbit.com/full_chart?code=CRIX.UPBIT.KRW-BTC")
-        logger.info("페이지 로드 완료")
-        time.sleep(10)
-
-    def _click_element_by_xpath(self, xpath, element_name, wait_time=20):
-        logger.debug(f"Trying to click on element: {element_name} with XPath: {xpath}")
-        try:
-            logger.debug(f"Waiting for element to be clickable...")
-            element = WebDriverWait(self.driver, wait_time).until(
-                EC.element_to_be_clickable((By.XPATH, xpath))
-            )
-            logger.debug(f"Element found: {element_name}")
-            
-            self.driver.execute_script("arguments[0].scrollIntoView(true);", element)
-            element.click()
-            logger.info(f"{element_name} 클릭 완료")
-            WebDriverWait(self.driver, 2).until(
-                EC.staleness_of(element)
-            )
-        except TimeoutException:
-            logger.error(f"{element_name} 클릭을 기다리는 중 타임아웃 발생")
-        except Exception as e:
-            logger.error(f"{element_name} 클릭 중 오류 발생: {e}")
-            raise
-
-    def _click_indicator_option(self, indicator_xpath, indicator_name):
-        try:
-            indicator_element = WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, indicator_xpath))
-            )
-            if not indicator_element.is_displayed():
-                actions = ActionChains(self.driver)
-                actions.move_to_element(indicator_element).perform()
-            indicator_element.click()
-            logger.info(f"{indicator_name} 옵션 클릭 완료")
-            time.sleep(1)
-        except TimeoutException:
-            logger.error(f"{indicator_name} 옵션을 찾을 수 없습니다.")
-        except Exception as e:
-            logger.error(f"{indicator_name} 옵션 클릭 중 오류 발생: {e}")
-
-    def _perform_chart_actions(self):
-        try:
-            self._click_element_by_xpath(
-                "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[1]/span/cq-clickable",
-                "시간 메뉴"
-            )
-            self._click_element_by_xpath(
-                "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[1]/cq-menu-dropdown/cq-item[8]/translate",
-                "1시간 옵션"
-            )
-            self._click_element_by_xpath(
-                "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/span/translate",
-                "차트설정"
-            )
-            dark_theme_xpath = "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[2]/cq-menu-dropdown/cq-themes/cq-themes-builtin/cq-item[2]"
-            self._click_indicator_option(dark_theme_xpath, "다크테마")
-
-            indicators = [
-                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[15]", "볼린저 밴드"),
-                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[81]", "RSI"),
-                ("//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/cq-menu-dropdown/cq-scroll/cq-studies/cq-studies-content/cq-item[53]", "MACD")
-            ]
-            
-            for indicator_xpath, indicator_name in indicators:
-                self._click_element_by_xpath(
-                    "//*[@id='fullChartiq']/div/div/div[1]/div/div/cq-menu[3]/span/translate",
-                    "지표 메뉴"
-                )
-                self._click_indicator_option(indicator_xpath, indicator_name)
-
-        except Exception as e:
-            logger.error(f"차트 액션 수행 중 오류 발생: {e}")
-            raise
-
-    # 로컬 개발용
     def _capture_and_save_screenshot(self):
         try:
             png = self.driver.get_screenshot_as_png()
@@ -177,7 +139,6 @@ class ChartCapture:
         except Exception as e:
             logger.error(f"스크린샷 캡처 및 저장 중 오류 발생: {e}")
             return None
-        
 
     def _save_current_price(self):
         current_price = get_current_price()
@@ -188,6 +149,7 @@ class ChartCapture:
     def _quit_driver(self):
         if self.driver:
             self.driver.quit()
+
 
 class ChartService:
     def __init__(self):
