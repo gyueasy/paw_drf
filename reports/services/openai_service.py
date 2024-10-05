@@ -2,9 +2,12 @@
 import logging
 import base64
 import json
+import httpx
+import asyncio
 
 # 서드파티 라이브러리
 from selenium.webdriver.support import expected_conditions as EC
+# from openai import AsyncOpenAI
 from openai import OpenAI
 
 # 장고 관련 임포트
@@ -21,7 +24,10 @@ logger = logging.getLogger(__name__)
 
 class OpenAIService:
     def __init__(self):
-        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
+        self.client = OpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            http_client=httpx.Client(timeout=60)
+        )
 
     def analyze_chart(self, file_path):
         with open(file_path, "rb") as image_file:
