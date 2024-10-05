@@ -31,7 +31,8 @@ DEBUG = False
 # DEBUG = True
 
 ALLOWED_HOSTS = [
-    'predictwise.site'
+    'predictwise.site',
+    'www.predictwise.site',
     'localhost',
     '127.0,0,1',
     '13.125.198.155',
