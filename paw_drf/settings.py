@@ -53,10 +53,14 @@ SCHEDULER_TIMEZONE = "Asia/Seoul"
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
+
+# Session 설정
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정
+SESSION_COOKIE_HTTPONLY = True
 
 CSRF_USE_SESSIONS = True
-CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정
 CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://127.0.0.1:8000']
 CORS_ALLOW_ALL_ORIGINS = True
 
