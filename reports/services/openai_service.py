@@ -7,8 +7,8 @@ import asyncio
 
 # 서드파티 라이브러리
 from selenium.webdriver.support import expected_conditions as EC
-# from openai import AsyncOpenAI
-from openai import OpenAI
+from openai import AsyncOpenAI
+# from openai import OpenAI
 
 # 장고 관련 임포트
 from django.conf import settings
@@ -24,17 +24,17 @@ logger = logging.getLogger(__name__)
 
 class OpenAIService:
     def __init__(self):
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             api_key=settings.OPENAI_API_KEY,
             http_client=httpx.Client(timeout=60)
         )
 
-    def analyze_chart(self, file_path):
+    async def analyze_chart(self, file_path):
         with open(file_path, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
         try:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {
@@ -77,10 +77,10 @@ class OpenAIService:
             logger.error(f"Error in analyze_chart: {str(e)}")
             return {"error": f"Error analyzing chart: {str(e)}"}
         
-    def analyze_news(self, news_items):
+    async def analyze_news(self, news_items):
         try:
             news_content = json.dumps(news_items, ensure_ascii=False)
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {
@@ -112,9 +112,9 @@ class OpenAIService:
             logger.error(f"Error in analyze_news: {str(e)}")
             return {"error": f"Error analyzing news: {str(e)}"}
         
-    def get_main_report_analysis(self, prompt, analysis_input):
+    async def get_main_report_analysis(self, prompt, analysis_input):
         try:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an AI assistant tasked with analyzing financial market data and providing investment recommendations."},
@@ -145,9 +145,9 @@ class OpenAIService:
             logger.error(f"Error in get_main_report_analysis: {str(e)}")
             return {"error": f"Error analyzing main report data: {str(e)}"}
         
-    def analyze_retrospective_report(self, report_content):
+    async def analyze_retrospective_report(self, report_content):
         try:
-            response = self.client.chat.completions.create(
+            response = await self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[
                     {
