@@ -81,7 +81,7 @@ class ChartCapture:
             driver.save_screenshot(f"error_{element_name}.png")
             raise
         
-    def perform_chart_actions(self):
+    def _perform_chart_actions(self):
         try:
             # 페이지가 완전히 로드될 때까지 대기
             WebDriverWait(self.driver, 60).until(
