@@ -36,7 +36,8 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0,0,1',
     '13.125.198.155',
-    'pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com'
+    'pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com',
+    '172.31.10.97',
 ]
 
 ALLOWED_IPS = ['127.0.0.1', '13.125.198.155', 'localhost']
