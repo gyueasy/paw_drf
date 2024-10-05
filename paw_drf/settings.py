@@ -36,6 +36,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0,0,1',
     '13.125.198.155',
+    'pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com'
 ]
 
 ALLOWED_IPS = ['127.0.0.1', '13.125.198.155', 'localhost']
@@ -62,7 +63,7 @@ SESSION_COOKIE_HTTPONLY = True
 
 CSRF_USE_SESSIONS = True
 CSRF_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정
-CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'https://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = ['https://predictwise.site', 'https://www.predictwise.site', 'https://pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com']
 CORS_ALLOW_ALL_ORIGINS = True
 
 # Application definition
