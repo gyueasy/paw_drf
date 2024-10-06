@@ -36,7 +36,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0,0,1',
     '13.125.198.155',
-    'pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com',
+    'pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com', #로드밸런서 DNS
     '172.31.10.97',
     '3.37.82.75',
 ]
@@ -67,6 +67,29 @@ CSRF_USE_SESSIONS = True
 CSRF_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정
 CSRF_TRUSTED_ORIGINS = ['https://predictwise.site', 'https://www.predictwise.site', 'https://pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com']
 CORS_ALLOW_ALL_ORIGINS = True
+
+# 모든 HTTP 메서드 허용
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# 필요한 헤더 허용
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 # Application definition
 
@@ -107,6 +130,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     # 'paw_drf.middleware.IPCheckMiddleware',
 ]
 
