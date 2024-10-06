@@ -56,7 +56,7 @@ IP_CHECK_PATHS = [
 SCHEDULER_TIMEZONE = "Asia/Seoul"
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False # 로드밸랜서에서 ssl 처리
 
 # Session 설정
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -268,8 +268,8 @@ LOGGING = {
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'static'
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Media files
 BASE_DIR = Path(__file__).resolve().parent.parent
