@@ -34,7 +34,7 @@ ALLOWED_HOSTS = [
     'predictwise.site',
     'www.predictwise.site',
     'localhost',
-    '127.0,0,1',
+    '127.0.0.1',
     '13.125.198.155',
     'pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com', #로드밸런서 DNS
     '172.31.10.97',
