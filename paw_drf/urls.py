@@ -26,6 +26,6 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),  # accounts.urls를 포함
     path("api/reports/", include("reports.urls")),
     path("api/health/", views.health_check),
-    path('media/<path:path>', views.test_view),
+    # path('media/<path:path>', views.test_view),
 ]
 # urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
