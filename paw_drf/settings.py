@@ -27,8 +27,8 @@ SECRET_KEY = config.DJANGO_SECRET_KEY
 OPENAI_API_KEY = config.OPENAI_API_KEY
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# DEBUG = False
-DEBUG = True
+DEBUG = False
+# DEBUG = True
 
 ALLOWED_HOSTS = [
     'predictwise.site',
