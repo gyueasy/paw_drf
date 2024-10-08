@@ -49,6 +49,9 @@ class MainReportSerializer(serializers.ModelSerializer):
                 return None
         return None
     
+    def get_average_accuracy(self, obj):
+        return self.context.get('average_accuracy', None)
+    
 class MainReportListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MainReport
