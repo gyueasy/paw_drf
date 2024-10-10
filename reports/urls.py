@@ -4,6 +4,7 @@ from .views import (
     crawl_and_analyze_news,
     create_main_report,
     calculate_accuracy,
+    SevenDayAverageAccuracyAPIView,
     create_and_analyze_retrospective_report,
     ChartReportDetailAPIView,
     NewsReportDetailAPIView,
@@ -26,6 +27,7 @@ urlpatterns = [
     path('report-weights/<int:pk>/', ReportWeightsDetailAPIView.as_view(), name='weights_detail'),
     path('main-report/<int:pk>/', MainReportDetailAPIView.as_view(), name='main_report_detail'),
     path('main-reports/', MainReportListAPIView.as_view(), name='main_report_list'),
+    path('7days_average/', SevenDayAverageAccuracyAPIView.as_view(), name='seven_day_average'),
     # 댓글 및 좋아요 (accounts app)
     path('<int:report_id>/comment/', CommentView.as_view(), name='create_comment'),
     path('comments/<int:comment_id>/', CommentView.as_view(), name='update_delete_comment'),
