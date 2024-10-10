@@ -1,5 +1,10 @@
 # 파이썬 표준 라이브러리
+import os
+import time
 import logging
+import io
+import traceback
+from datetime import datetime
 
 # 서드파티 라이브러리
 from selenium import webdriver
@@ -8,14 +13,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
-
+from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
+from webdriver_manager.chrome import ChromeDriverManager
 
 logger = logging.getLogger(__name__)
 
 class NewsService:
     def __init__(self):
         self.driver = None
-        self.create_driver()
 
     def create_driver(self):
         logger.info("ChromeDriver 설정 중...")
@@ -26,22 +31,34 @@ class NewsService:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("--verbose")
+            chrome_options.add_argument("--log-path=chromedriver.log")
 
-            service = Service('/usr/local/bin/chromedriver')
+            service = Service(ChromeDriverManager().install())
+
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
+            return self.driver
         except Exception as e:
             logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
+            logger.error(f"상세 오류: {traceback.format_exc()}")
             raise
 
     def crawl_news(self):
-        bitcoin_url = "https://www.google.com/search?q=bitcoin+news+today&sca_esv=4c3d1b1066869309&sca_upv=1&tbm=nws&sxsrf=ADLYWIK8x3D2LUNcBVUwNscEcDrQQrhyEQ:1727580522901&source=lnt&tbs=qdr:d&sa=X&ved=2ahUKEwi-sI37mueIAxWt2TQHHaU1MhcQpwV6BAgCEA0&biw=1049&bih=957&dpr=1.25"
-        altcoin_url = "https://www.google.com/search?q=altcoin+news&sca_esv=4c3d1b1066869309&sca_upv=1&biw=1049&bih=957&tbs=qdr%3Ad&tbm=nws&sxsrf=ADLYWIIOSOPtMydv_8A9EPI9d1UuoKUMSA%3A1727581719175&ei=F874ZseyCv3f2roPq6eWwQM&ved=0ahUKEwiHmsS1n-eIAxX9r1YBHauTJTgQ4dUDCA0&uact=5&oq=altcoin+news&gs_lp=Egxnd3Mtd2l6LW5ld3MiDGFsdGNvaW4gbmV3czIFEAAYgAQyBBAAGB4yBBAAGB4yBBAAGB4yBhAAGAgYHjIGEAAYCBgeMgYQABgIGB4yBhAAGAgYHjIGEAAYBRgeMgYQABgFGB5IiylQgCBYkihwAXgAkAEAmAGRAaABhwWqAQMyLjS4AQPIAQD4AQGYAgegAsUFwgIKEAAYgAQYQxiKBZgDAIgGAZIHAzMuNKAHsCA&sclient=gws-wiz-news"
-        
-        news_items = []
-        news_items.extend(self._crawl_single_page(bitcoin_url, "Bitcoin"))
-        news_items.extend(self._crawl_single_page(altcoin_url, "Altcoin"))
-        
-        return news_items
+        try:
+            self.driver = self.create_driver()
+            bitcoin_url = "https://www.google.com/search?q=bitcoin+news+today&tbm=nws&tbs=qdr:d"
+            altcoin_url = "https://www.google.com/search?q=altcoin+news&tbm=nws&tbs=qdr:d"
+            
+            news_items = []
+            news_items.extend(self._crawl_single_page(bitcoin_url, "Bitcoin"))
+            news_items.extend(self._crawl_single_page(altcoin_url, "Altcoin"))
+            
+            return news_items
+        except Exception as e:
+            logger.error(f"뉴스 크롤링 중 오류 발생: {e}\n{traceback.format_exc()}")
+            return []
+        finally:
+            self._quit_driver()
 
     def _crawl_single_page(self, url, category):
         self.driver.get(url)
@@ -50,11 +67,11 @@ class NewsService:
         for i in range(1, 11):  # 각 페이지에서 10개의 뉴스 아이템을 크롤링
             try:
                 title = WebDriverWait(self.driver, 10).until(
-                    EC.presence_of_element_located((By.XPATH, f"//*[@id='rso']/div/div/div[{i}]/div/div/a/div/div[2]/div[2]"))
+                    EC.presence_of_element_located((By.XPATH, f"//div[@class='SoaBEf']/div[{i}]//h3[@class='r_znxjsd']"))
                 ).text
-                summary = self.driver.find_element(By.XPATH, f"//*[@id='rso']/div/div/div[{i}]/div/div/a/div/div[2]/div[3]").text
-                date = self.driver.find_element(By.XPATH, f"//*[@id='rso']/div/div/div[{i}]/div/div/a/div/div[2]/div[4]").text
-                source = self.driver.find_element(By.XPATH, f"//*[@id='rso']/div/div/div[{i}]/div/div/a/div/div[2]/div[1]/span").text
+                summary = self.driver.find_element(By.XPATH, f"//div[@class='SoaBEf']/div[{i}]//div[@class='GI74Re nDgy9d']").text
+                date_source = self.driver.find_element(By.XPATH, f"//div[@class='SoaBEf']/div[{i}]//div[@class='OSrXXb ZE0LJd']").text
+                date, source = date_source.split(' - ')
                 
                 news_items.append({
                     'title': title,
@@ -63,11 +80,14 @@ class NewsService:
                     'source': source,
                     'category': category
                 })
+            except (TimeoutException, NoSuchElementException) as e:
+                logger.warning(f"Error crawling {category} news item {i}: {str(e)}")
             except Exception as e:
-                logger.error(f"Error crawling {category} news item {i}: {str(e)}")
+                logger.error(f"Unexpected error crawling {category} news item {i}: {str(e)}")
         
         return news_items
 
-    def __del__(self):
-        if hasattr(self, 'driver') and self.driver:
+    def _quit_driver(self):
+        if self.driver:
             self.driver.quit()
+            self.driver = None
