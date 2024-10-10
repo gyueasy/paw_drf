@@ -1,7 +1,10 @@
 import logging
 from rest_framework import generics
+from django.db.models import Avg
+from django.utils import timezone
+from datetime import timedelta
 from ..models import ChartReport, NewsReport, MainReport, ReportWeights, Accuracy
-from ..serializers import ChartReportSerializer, NewsReportSerializer, ReportWeightsSerializer, MainReportSerializer, MainReportListSerializer
+from ..serializers import SevenDayAverageAccuracySerializer, ChartReportSerializer, NewsReportSerializer, ReportWeightsSerializer, MainReportSerializer, MainReportListSerializer
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
