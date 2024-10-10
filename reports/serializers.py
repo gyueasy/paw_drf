@@ -56,3 +56,8 @@ class MainReportListSerializer(serializers.ModelSerializer):
     class Meta:
         model = MainReport
         fields = ['id', 'title', 'recommendation', 'created_at']
+
+class SevenDayAverageAccuracySerializer(serializers.Serializer):
+    seven_day_average_accuracy = serializers.CharField(allow_null=True)
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()

@@ -40,3 +40,20 @@ class MainReportListAPIView(generics.ListAPIView):
         except Accuracy.DoesNotExist:
             context['average_accuracy'] = None
         return context
+    
+class SevenDayAverageAccuracyAPIView(generics.RetrieveAPIView):
+    serializer_class = SevenDayAverageAccuracySerializer
+
+    def get_object(self):
+        end_date = timezone.now()
+        start_date = end_date - timedelta(days=7)
+        
+        seven_day_accuracy = Accuracy.objects.filter(
+            calculated_at__range=(start_date, end_date)
+        ).aggregate(avg_accuracy=Avg('average_accuracy'))
+
+        return {
+            'seven_day_average_accuracy': f"{seven_day_accuracy['avg_accuracy']:.2f}%" if seven_day_accuracy['avg_accuracy'] else None,
+            'start_date': start_date.date(),
+            'end_date': end_date.date()
+        }
