@@ -4,4 +4,4 @@ from .main_report_views import create_main_report
 
 from .retrospective_views import create_and_analyze_retrospective_report
 from .accuracy_views import calculate_accuracy
-from .api_views import MainReportDetailAPIView, MainReportListAPIView, ReportWeightsDetailAPIView, ChartReportDetailAPIView, NewsReportDetailAPIView
+from .api_views import SevenDayAverageAccuracyAPIView, MainReportDetailAPIView, MainReportListAPIView, ReportWeightsDetailAPIView, ChartReportDetailAPIView, NewsReportDetailAPIView
