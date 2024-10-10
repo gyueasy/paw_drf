@@ -7,17 +7,31 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.chrome.service import Service
 
 
 logger = logging.getLogger(__name__)
 
 class NewsService:
     def __init__(self):
-        chrome_options = Options()
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        self.driver = webdriver.Chrome(options=chrome_options)
+        self.driver = None
+        self.create_driver()
+
+    def create_driver(self):
+        logger.info("ChromeDriver 설정 중...")
+        try:
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument("--no-sandbox")
+            chrome_options.add_argument("--disable-dev-shm-usage")
+            chrome_options.add_argument("--disable-gpu")
+            chrome_options.add_argument("--window-size=1920,1080")
+
+            service = Service('/usr/local/bin/chromedriver')
+            self.driver = webdriver.Chrome(service=service, options=chrome_options)
+        except Exception as e:
+            logger.error(f"ChromeDriver 생성 중 오류 발생: {e}")
+            raise
 
     def crawl_news(self):
         bitcoin_url = "https://www.google.com/search?q=bitcoin+news+today&sca_esv=4c3d1b1066869309&sca_upv=1&tbm=nws&sxsrf=ADLYWIK8x3D2LUNcBVUwNscEcDrQQrhyEQ:1727580522901&source=lnt&tbs=qdr:d&sa=X&ved=2ahUKEwi-sI37mueIAxWt2TQHHaU1MhcQpwV6BAgCEA0&biw=1049&bih=957&dpr=1.25"
@@ -55,4 +69,5 @@ class NewsService:
         return news_items
 
     def __del__(self):
-        self.driver.quit()
+        if hasattr(self, 'driver') and self.driver:
+            self.driver.quit()
