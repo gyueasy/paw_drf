@@ -34,7 +34,7 @@ class NewsService:
             chrome_options.add_argument("--verbose")
             chrome_options.add_argument("--log-path=chromedriver.log")
 
-            service = Service(ChromeDriverManager().install())
+            service = Service('/usr/local/bin/chromedriver')
 
             self.driver = webdriver.Chrome(service=service, options=chrome_options)
             return self.driver
