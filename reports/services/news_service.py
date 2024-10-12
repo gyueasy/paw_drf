@@ -18,6 +18,14 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 logger = logging.getLogger(__name__)
 
+import logging
+import traceback
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
+
+logger = logging.getLogger(__name__)
+
 class NewsService:
     def __init__(self):
         self.driver = None
@@ -31,8 +39,6 @@ class NewsService:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("--verbose")
-            chrome_options.add_argument("--log-path=chromedriver.log")
 
             service = Service('/usr/local/bin/chromedriver')
 
