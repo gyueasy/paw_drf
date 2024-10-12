@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -23,6 +24,7 @@ class NewsService:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
             service = Service('/usr/local/bin/chromedriver')
 
@@ -44,18 +46,26 @@ class NewsService:
             
             return news_items
         except Exception as e:
-            logger.error(f"뉴스 크롤링 중 오류 발생: {e}", exc_info=True)
+            logger.error(f"뉴스 크롤링 중 오류 발생: {e}\n{traceback.format_exc()}")
             return []
         finally:
             self._quit_driver()
 
     def _crawl_single_page(self, url, category):
-        self.driver.get(url)
-        logger.info(f"{category} 뉴스 페이지 로드 완료")
-        time.sleep(10)  # 페이지 로드를 위한 대기 시간 증가
-        news_items = []
-        
         try:
+            self.driver.get(url)
+            logger.info(f"{category} 뉴스 페이지 로드 시작")
+            
+            # 페이지가 완전히 로드될 때까지 대기
+            WebDriverWait(self.driver, 60).until(
+                EC.presence_of_element_located((By.TAG_NAME, "body"))
+            )
+            
+            logger.info(f"{category} 뉴스 페이지 로드 완료")
+            time.sleep(10)  # 추가적인 대기 시간
+            
+            news_items = []
+            
             for i in range(1, 11):  # 10개의 뉴스 아이템 크롤링
                 try:
                     source_xpath = f"/html/body/div[3]/div/div[11]/div/div[2]/div[2]/div/div/div/div/div[{i}]/div/div/a/div/div[2]/div[1]/span"
@@ -82,10 +92,10 @@ class NewsService:
                     logger.error(f"Unexpected error crawling {category} news item {i}: {str(e)}", exc_info=True)
             
             logger.info(f"{len(news_items)}개의 {category} 뉴스 아이템 크롤링 완료")
+            return news_items
         except Exception as e:
-            logger.error(f"{category} 뉴스 크롤링 중 예상치 못한 오류 발생: {str(e)}", exc_info=True)
-        
-        return news_items
+            logger.error(f"{category} 뉴스 크롤링 중 예상치 못한 오류 발생: {str(e)}\n{traceback.format_exc()}")
+            return []
 
     def _quit_driver(self):
         if self.driver:
