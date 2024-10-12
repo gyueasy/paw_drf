@@ -1,6 +1,3 @@
-네, 이해했습니다. `news_service`와 `chart_service`의 구동 방식을 완전히 동일하게 맞추는 것이 좋겠습니다. 문제는 `news_service`에서 웹 요소를 찾지 못하고 있는 것 같습니다. 다음과 같이 `news_service.py`를 수정해 보겠습니다:
-
-```python
 import logging
 import time
 from selenium import webdriver
