@@ -23,6 +23,7 @@ class NewsService:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=1920,1080")
+            chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
             service = Service('/usr/local/bin/chromedriver')
 
@@ -52,21 +53,24 @@ class NewsService:
     def _crawl_single_page(self, url, category):
         self.driver.get(url)
         logger.info(f"{category} 뉴스 페이지 로드 완료")
-        time.sleep(5)  # 페이지 로드를 위한 대기 시간 추가
+        time.sleep(10)  # 페이지 로드를 위한 대기 시간 증가
         news_items = []
         
         try:
+            # 페이지 소스 로깅
+            logger.debug(f"Page source: {self.driver.page_source[:1000]}...")  # 처음 1000자만 로깅
+
             WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.CLASS_NAME, "SoaBEf"))
+                EC.presence_of_element_located((By.XPATH, "//div[@class='g']"))
             )
-            news_elements = self.driver.find_elements(By.CLASS_NAME, "SoaBEf")
+            news_elements = self.driver.find_elements(By.XPATH, "//div[@class='g']")
             
             for element in news_elements[:10]:  # 최대 10개의 뉴스 아이템만 크롤링
                 try:
-                    title = element.find_element(By.CLASS_NAME, "r_znxjsd").text
-                    summary = element.find_element(By.CLASS_NAME, "GI74Re").text
-                    date_source = element.find_element(By.CLASS_NAME, "OSrXXb").text
-                    date, source = date_source.split(' - ')
+                    title = element.find_element(By.XPATH, ".//h3").text
+                    summary = element.find_element(By.XPATH, ".//div[@class='st']").text
+                    date_source = element.find_element(By.XPATH, ".//div[@class='slp']").text
+                    date, source = date_source.rsplit(' - ', 1)
                     
                     news_items.append({
                         'title': title,
@@ -92,4 +96,3 @@ class NewsService:
         if self.driver:
             self.driver.quit()
             self.driver = None
-            logger.info("ChromeDriver 종료")
