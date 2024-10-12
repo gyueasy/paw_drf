@@ -23,7 +23,6 @@ class NewsService:
             chrome_options.add_argument("--disable-dev-shm-usage")
             chrome_options.add_argument("--disable-gpu")
             chrome_options.add_argument("--window-size=1920,1080")
-            chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
 
             service = Service('/usr/local/bin/chromedriver')
 
@@ -57,20 +56,17 @@ class NewsService:
         news_items = []
         
         try:
-            # 페이지 소스 로깅
-            logger.debug(f"Page source: {self.driver.page_source[:1000]}...")  # 처음 1000자만 로깅
-
-            WebDriverWait(self.driver, 20).until(
-                EC.presence_of_element_located((By.XPATH, "//div[@class='g']"))
-            )
-            news_elements = self.driver.find_elements(By.XPATH, "//div[@class='g']")
-            
-            for element in news_elements[:10]:  # 최대 10개의 뉴스 아이템만 크롤링
+            for i in range(1, 11):  # 10개의 뉴스 아이템 크롤링
                 try:
-                    title = element.find_element(By.XPATH, ".//h3").text
-                    summary = element.find_element(By.XPATH, ".//div[@class='st']").text
-                    date_source = element.find_element(By.XPATH, ".//div[@class='slp']").text
-                    date, source = date_source.rsplit(' - ', 1)
+                    source_xpath = f"/html/body/div[3]/div/div[11]/div/div[2]/div[2]/div/div/div/div/div[{i}]/div/div/a/div/div[2]/div[1]/span"
+                    title_xpath = f"/html/body/div[3]/div/div[11]/div/div[2]/div[2]/div/div/div/div/div[{i}]/div/div/a/div/div[2]/div[2]"
+                    summary_xpath = f"/html/body/div[3]/div/div[11]/div/div[2]/div[2]/div/div/div/div/div[{i}]/div/div/a/div/div[2]/div[3]"
+                    date_xpath = f"/html/body/div[3]/div/div[11]/div/div[2]/div[2]/div/div/div/div/div[{i}]/div/div/a/div/div[2]/div[4]"
+                    
+                    source = self.driver.find_element(By.XPATH, source_xpath).text
+                    title = self.driver.find_element(By.XPATH, title_xpath).text
+                    summary = self.driver.find_element(By.XPATH, summary_xpath).text
+                    date = self.driver.find_element(By.XPATH, date_xpath).text
                     
                     news_items.append({
                         'title': title,
@@ -79,14 +75,13 @@ class NewsService:
                         'source': source,
                         'category': category
                     })
+                    logger.info(f"{category} 뉴스 아이템 {i} 크롤링 완료")
                 except NoSuchElementException as e:
-                    logger.warning(f"Error crawling {category} news item: {str(e)}")
+                    logger.warning(f"Error crawling {category} news item {i}: {str(e)}")
                 except Exception as e:
-                    logger.error(f"Unexpected error crawling {category} news item: {str(e)}", exc_info=True)
+                    logger.error(f"Unexpected error crawling {category} news item {i}: {str(e)}", exc_info=True)
             
             logger.info(f"{len(news_items)}개의 {category} 뉴스 아이템 크롤링 완료")
-        except TimeoutException:
-            logger.error(f"{category} 뉴스 요소를 찾는 데 시간 초과")
         except Exception as e:
             logger.error(f"{category} 뉴스 크롤링 중 예상치 못한 오류 발생: {str(e)}", exc_info=True)
         
@@ -96,3 +91,4 @@ class NewsService:
         if self.driver:
             self.driver.quit()
             self.driver = None
+            logger.info("ChromeDriver 종료")
