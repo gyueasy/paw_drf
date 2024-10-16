@@ -3,6 +3,7 @@ from rest_framework import generics
 from django.db.models import Avg
 from django.utils import timezone
 from datetime import timedelta
+from rest_framework.permissions import AllowAny
 from ..models import ChartReport, NewsReport, MainReport, ReportWeights, Accuracy
 from ..serializers import SevenDayAverageAccuracySerializer, ChartReportSerializer, NewsReportSerializer, ReportWeightsSerializer, MainReportSerializer, MainReportListSerializer
 
@@ -47,6 +48,7 @@ class MainReportListAPIView(generics.ListAPIView):
 class SevenDayAverageAccuracyAPIView(generics.RetrieveAPIView):
     serializer_class = SevenDayAverageAccuracySerializer
 
+    permission_classes = [AllowAny]
     def get_object(self):
         end_date = timezone.now()
         start_date = end_date - timedelta(days=7)
