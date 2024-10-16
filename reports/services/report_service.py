@@ -8,6 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 
 # 장고 관련 임포트
 from django.db import models
+from django.core.cache import cache
 
 # 로컬 애플리케이션 임포트
 from ..gpt_prompts import (
@@ -24,6 +25,10 @@ logger = logging.getLogger(__name__)
 class ReportService:
     def __init__(self):
         self.openai_service = OpenAIService()
+
+    @staticmethod
+    def get_cache_key(key):
+        return f"mainreport:{key}"
 
     def preprocess_data(self, data):
         chart_analysis = data['chart_analysis']
@@ -128,11 +133,46 @@ class ReportService:
             )
             main_report.save()
 
+            # 캐시 업데이트
+            self.update_report_cache(main_report)
+
             logger.info(f"Successfully created and saved MainReport with id: {main_report.id}")
             return main_report
         except Exception as e:
             logger.error(f"Error in create_main_report: {str(e)}")
             return None
+        
+    def update_report_cache(self, report):
+        cache.set(self.get_cache_key('latest'), report, timeout=3600)  # 1시간 캐시
+        cache.set(self.get_cache_key(f'id:{report.id}'), report, timeout=3600)
+
+    def invalidate_report_cache(self, report_id):
+        cache.delete(self.get_cache_key(f'id:{report_id}'))
+        cache.delete(self.get_cache_key('latest'))
+
+    def get_latest_main_report(self):
+        cache_key = self.get_cache_key('latest')
+        report = cache.get(cache_key)
+        if report is None:
+            try:
+                report = MainReport.objects.latest('created_at')
+                self.update_report_cache(report)
+            except MainReport.DoesNotExist:
+                return None
+        return report
+
+    def get_main_report_by_id(self, report_id):
+        cache_key = self.get_cache_key(f'id:{report_id}')
+        report = cache.get(cache_key)
+        if report is None:
+            try:
+                report = MainReport.objects.get(id=report_id)
+                self.update_report_cache(report)
+            except MainReport.DoesNotExist:
+                return None
+        return report
+
+
         
 class RetrospectiveReportService:
     @staticmethod
