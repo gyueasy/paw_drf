@@ -26,4 +26,5 @@ urlpatterns = [
     path('api/auth/', include('accounts.urls')),  # accounts.urls를 포함
     path("api/reports/", include("reports.urls")),
     path("api/health/", views.health_check),
+    path("api/test-redis/", views.test_redis_cache),
 ]
