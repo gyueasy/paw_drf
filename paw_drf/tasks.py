@@ -1,4 +1,4 @@
-from paw_drf.celery import shared_task
+from celery import shared_task, chain, chord
 from reports.services import ChartService
 from reports.services import NewsService
 from reports.services import OpenAIService
@@ -7,7 +7,6 @@ from reports.services import ReportService, RetrospectiveReportService
 from reports.models import Accuracy, MainReport, Price
 import logging
 import json
-from paw_drf.celery import chain, chord
 
 logger = logging.getLogger(__name__)
 
@@ -139,7 +138,10 @@ def generate_reports_task():
         )()
 
         logger.info("Finished generate_reports_task")
-        return result.get()  # 최종 결과 반환
+        return {
+            'success': True,
+            'message': 'Report generation tasks have been initiated.'
+        }
     except Exception as e:
         logger.error(f"Error in generate_reports_task: {str(e)}")
         return {
