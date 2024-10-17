@@ -8,6 +8,7 @@ from ..reports.services import ReportService, RetrospectiveReportService
 from ..reports.models import Accuracy, MainReport, Price
 import logging
 import json
+from celery import chain, chord
 
 logger = logging.getLogger(__name__)
 
