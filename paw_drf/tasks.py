@@ -1,14 +1,13 @@
-from celery import shared_task
-from ..reports.services import ChartService
-from ..reports.services import NewsService
-from ..reports.services import OpenAIService
-from ..reports.services import AccuracyService
-from ..reports.models import NewsReport
-from ..reports.services import ReportService, RetrospectiveReportService
-from ..reports.models import Accuracy, MainReport, Price
+from paw_drf.celery import shared_task
+from reports.services import ChartService
+from reports.services import NewsService
+from reports.services import OpenAIService
+from reports.models import NewsReport
+from reports.services import ReportService, RetrospectiveReportService
+from reports.models import Accuracy, MainReport, Price
 import logging
 import json
-from celery import chain, chord
+from paw_drf.celery import chain, chord
 
 logger = logging.getLogger(__name__)
 
