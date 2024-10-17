@@ -1,25 +1,22 @@
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from ..services.chart_service import ChartService
-import logging 
-from django.core.exceptions import PermissionDenied
+from django.views.decorators.http import require_http_methods
+from paw_drf.tasks import capture_and_analyze_chart_task
+import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @csrf_exempt
+@require_http_methods(["POST"])
 def capture_and_analyze_chart(request):
     try:
-        if request.method == 'POST':
-            chart_service = ChartService()
-            result = chart_service.capture_and_analyze_chart()
-
-            if 'error' in result:
-                return JsonResponse({'error': result['error']}, status=500)
-            
-            return JsonResponse(result)
-
-        return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
-    except PermissionDenied as e:
-        logger.error(f"PermissionDenied: {str(e)}")
-        return JsonResponse({'error': 'Access Denied'}, status=403)
+        task = capture_and_analyze_chart_task.delay()
+        return JsonResponse({
+            'success': True,
+            'message': 'Chart capture and analysis task has been initiated.',
+            'task_id': task.id
+        })
+    except Exception as e:
+        logger.error(f"Error initiating chart capture and analysis task: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)

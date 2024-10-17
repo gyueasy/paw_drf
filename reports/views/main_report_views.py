@@ -1,6 +1,8 @@
 import logging
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
+from paw_drf.tasks import create_main_report_task
 from ..services import ReportService
 
 logging.basicConfig(level=logging.INFO)
@@ -9,28 +11,18 @@ logger = logging.getLogger(__name__)
 report_service = ReportService()
 
 @csrf_exempt
+@require_http_methods(["POST"])
 def create_main_report(request):
-    if request.method == 'POST':
-        try:
-            main_report = report_service.create_main_report()
-            if main_report:
-                return JsonResponse({
-                    'success': True,
-                    'message': '메인 리포트가 성공적으로 생성되었습니다.',
-                    'report_id': main_report.id
-                })
-            else:
-                return JsonResponse({
-                    'success': False,
-                    'message': '메인 리포트 생성에 실패했습니다.'
-                }, status=500)
-        except Exception as e:
-            logger.error(f"Error in create_main_report view: {str(e)}")
-            return JsonResponse({
-                'success': False,
-                'message': f'메인 리포트 생성 중 오류가 발생했습니다: {str(e)}'
-            }, status=500)
-    return JsonResponse({'error': '잘못된 요청 방식입니다.'}, status=400)
+    try:
+        task = create_main_report_task.delay()
+        return JsonResponse({
+            'success': True,
+            'message': '메인 리포트 생성 작업이 시작되었습니다.',
+            'task_id': task.id
+        })
+    except Exception as e:
+        logger.error(f"Error initiating main report creation task: {str(e)}")
+        return JsonResponse({'error': str(e)}, status=500)
 
 def get_latest_main_report(request):
     report = report_service.get_latest_main_report()

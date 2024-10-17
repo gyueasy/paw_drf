@@ -273,7 +273,13 @@ class RetrospectiveReportService:
         if prompt is None:
             return None, "회고 분석을 위한 프롬프트를 생성할 수 없습니다."
         
-        new_weights, message = RetrospectiveReportService.analyze_and_update_weights(prompt, main_report_id)
+        openai_service = OpenAIService()
+        analysis_result = openai_service.analyze_retrospective_report(prompt)
+        
+        if 'error' in analysis_result:
+            return None, f"OpenAI 분석 중 오류 발생: {analysis_result['error']}"
+        
+        new_weights, message = RetrospectiveReportService.analyze_and_update_weights(analysis_result, main_report_id)
         if new_weights:
             return new_weights, "회고 분석 및 가중치 업데이트가 성공적으로 완료되었습니다."
         else:
