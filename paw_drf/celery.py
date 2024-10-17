@@ -1,5 +1,5 @@
 import os
-from paw_drf.celery import Celery
+from celery import Celery
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'paw_drf.settings')
 
