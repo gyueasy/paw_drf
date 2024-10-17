@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 from . import config
 from datetime import timedelta
+from celery.schedules import crontab
 import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -187,6 +188,13 @@ CACHES = {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
     }
+}
+
+CELERY_BEAT_SCHEDULE = {
+    'generate-reports-every-day': {
+        'task': 'paw_drf.tasks.generate_reports_task',
+        'schedule': crontab(hour='8,20', minute=30),  #'schedule': crontab(hour='9,21', minute=0) 9tl 21시 정각에 실행
+    },
 }
 
 # Custom user model
