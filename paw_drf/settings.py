@@ -42,6 +42,10 @@ ALLOWED_HOSTS = [
     '3.34.114.101',
 ]
 
+flower_port = 8888
+flower_address = '172.31.10.97'  # EC2 인스턴스의 프라이빗 IP 주소
+# flower_basic_auth = 'user:password'  # 필요하다면 기본 인증 설정
+
 ALLOWED_IPS = ['127.0.0.1', '13.125.198.155', 'localhost']
 # 13.125.30.223 aws 서버 ip
 # ALLOWED_IPS = ['1.1.1.1', '2.2.2.2'] #테스트용
@@ -57,15 +61,16 @@ IP_CHECK_PATHS = [
 SCHEDULER_TIMEZONE = "Asia/Seoul"
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = False # 로드밸랜서에서 ssl 처리
+SECURE_SSL_REDIRECT = True # 로드밸랜서에서 ssl 처리
 
 # Session 설정
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
-SESSION_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정
+# SESSION_CACHE_ALIAS = "default" #개발환경에서는 캐시를 사용하지 않음
+SESSION_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정, 개발환경에선 False
 SESSION_COOKIE_HTTPONLY = True
 
 CSRF_USE_SESSIONS = True
-CSRF_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정
+CSRF_COOKIE_SECURE = False  # HTTPS를 사용하는 경우에만 True로 설정, 개발환경에선 False
 CSRF_TRUSTED_ORIGINS = ['https://predictwise.site', 'https://www.predictwise.site', 'https://pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com']
 CORS_ALLOW_ALL_ORIGINS = True
 
