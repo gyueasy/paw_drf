@@ -125,7 +125,8 @@ INSTALLED_APPS = [
     # Local apps
     'accounts',
     'reports.apps.ReportsConfig',
-    
+    'discussions',
+    'news',
 ]
 
 MIDDLEWARE = [
@@ -207,6 +208,10 @@ CELERY_BEAT_SCHEDULE = {
     'generate-reports-every-day': {
         'task': 'paw_drf.tasks.generate_reports_task',
         'schedule': crontab(hour='8,20', minute=30),  #'schedule': crontab(hour='9,21', minute=0) 9tl 21시 정각에 실행
+    },
+    'fetch-crypto-news-every-minute': {
+        'task': 'news.tasks.fetch_crypto_news',
+        'schedule': crontab(minute='*/10'), 
     },
 }
 
@@ -320,25 +325,25 @@ USE_TZ = True
 #     },
 # }
 
-#디버깅 Logging
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'logs', 'django_debug.log'),
-        },
-    },
-    'loggers': {
-        'django': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
+#디버깅 Logging 배포환경에서 다시 킴
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': os.path.join(BASE_DIR, 'logs', 'django_debug.log'),
+#         },
+#     },
+#     'loggers': {
+#         'django': {
+#             'handlers': ['file'],
+#             'level': 'DEBUG',
+#             'propagate': True,
+#         },
+#     },
+# }
 
 
 # Static files (CSS, JavaScript, Images)
