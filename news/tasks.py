@@ -4,10 +4,13 @@ from pytz import timezone
 from datetime import datetime
 import feedparser
 import openai
+import logging
 import json
 from .models import NewsItem, News
 
 openai.api_key = settings.OPENAI_API_KEY
+
+logger = logging.getLogger(__name__)
 
 @shared_task
 def fetch_crypto_news():
@@ -24,20 +27,33 @@ def fetch_crypto_news():
     news_items = []
 
     for feed in default_feeds:
-        parsed_feed = feedparser.parse(feed['url'])
+        try:
+            parsed_feed = feedparser.parse(feed['url'])
+        except Exception as e:
+            print(f"Error parsing feed {feed['name']}: {str(e)}")
+            continue
+
+        if not parsed_feed.entries:  # entries가 비어있다면 넘어가기
+            print(f"No entries found for feed {feed['name']}")
+            continue
 
         for entry in parsed_feed.entries:
-            title = entry.title
+            title = entry.title[:500]  # 500자로 제한
             link = entry.link
+            summary = entry.summary[:5000] if 'summary' in entry else "요약 정보 없음"  # 적절한 길이로 제한
 
-            if feed['name'] == 'CoinDesk':
-                utc_time = datetime(*entry.published_parsed[:6])
-            else:  # Cointelegraph
-                utc_time = datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
-            kr_time = utc_time.astimezone(kr_tz)
-            published = kr_time
+            # Time parsing 부분에서 예외 처리 추가
+            try:
+                if feed['name'] == 'CoinDesk':
+                    utc_time = datetime(*entry.published_parsed[:6])
+                else:  # Cointelegraph
+                    utc_time = datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
+                kr_time = utc_time.astimezone(kr_tz)
+                published = kr_time
+            except Exception as e:
+                print(f"Error processing time for entry {title}: {str(e)}")
+                continue  # 시간을 처리할 수 없으면 다음으로 넘어가기
 
-            summary = entry.summary if 'summary' in entry else "요약 정보 없음"
             image_url = extract_image_url(entry, feed['name'])
 
             news_feed, _ = News.objects.get_or_create(name=feed['name'], defaults={'url': feed['url'], 'is_active': True})
@@ -53,19 +69,32 @@ def fetch_crypto_news():
                 }
             )
 
-            if created:
+            if created:  # 새로 생성된 경우에만
                 news_items.append(news_item)
+
+                # 필드 길이 로그 출력
+                logger.info(f"Title length: {len(news_item.title)}")
+                logger.info(f"Content length: {len(news_item.content)}")
+                logger.info(f"Published date: {news_item.published_date}")
+                logger.info(f"Link length: {len(news_item.link)}")
+                logger.info(f"Image URL length: {len(news_item.image_url) if news_item.image_url else 0}")
+
                 # OpenAI 분석 수행
-                analysis_result = analyze_with_openai(news_item)
-                if analysis_result:
-                    news_item.ai_analysis = analysis_result
-                    news_item.translated_title = analysis_result.get('translated_title', '')
-                    news_item.translated_content = analysis_result.get('translated_content', '')
-                    news_item.impact = analysis_result.get('impact', '')
-                    news_item.tickers = ','.join(analysis_result.get('tickers', []))
-                    news_item.save()
+                try:
+                    analysis_result = analyze_with_openai(news_item)
+                    if analysis_result:
+                        news_item.ai_analysis = analysis_result
+                        news_item.translated_title = analysis_result.get('translated_title', '')
+                        news_item.translated_content = analysis_result.get('translated_content', '')
+                        news_item.impact = analysis_result.get('impact', '')
+                        news_item.tickers = ','.join(analysis_result.get('tickers', []))
+                        news_item.save()
+                except Exception as e:
+                    print(f"Error analyzing news item {title}: {str(e)}")
 
     return f"{len(news_items)} new items fetched, saved, and analyzed."
+
+
 
 def extract_image_url(entry, source):
     if source == 'CoinDesk':
