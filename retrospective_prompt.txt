@@ -1,0 +1,39 @@
+Current Price: 93369000.00000000
+Previous Price: 93285000.00000000
+Price Change: 0.09%
+Latest Recommendation: BUY (1)
+Prediction Correct: Yes
+Current Accuracy: 1.00
+Average Accuracy (7d): 72.22%
+
+Previous Analysis:
+Recommendation: Buy, 90
+Confidence Level: The high confidence level reflects the strong bullish indicators and positive market sentiment, making it a prime time to invest in Bitcoin.
+Reasoning: The combination of bullish technical analysis, strong news sentiment, and favorable market conditions creates a compelling case for investing in Bitcoin. The potential for a breakout, alongside institutional interest and whale accumulation, further supports this recommendation.
+Overall Analysis: The market is showing strong bullish signals supported by both technical indicators and positive news sentiment, suggesting a favorable environment for investment in Bitcoin.
+Market Analysis: The news sentiment is overwhelmingly bullish, particularly with significant events like the SEC's approval for Bitcoin ETF options and India's leading position in crypto adoption. The Fear and Greed Index at 73 indicates a strong greed sentiment, which often correlates with upward price movement.
+Chart Analysis: Technical indicators confirm bullish momentum, with higher highs and lows, RSI at 61, and price above the 50-period moving average. The price is testing the upper Bollinger Band, indicating potential for a breakout. Support is found around 91,510, with resistance at 93,700, suggesting a strategic entry point.
+
+Compare your previous analysis and recommendation with the actual price change. Based on this comparison, please adjust the following 12 weights:
+
+{
+    "analysis": "Your analysis of the comparison between prediction and actual result",
+    "weight_adjustments": {
+        "overall_weight": 0.0,
+        "fear_greed_index_weight": 0.0,
+        "news_weight": 0.0,
+        "chart_overall_weight": 0.0,
+        "chart_technical_weight": 0.0,
+        "chart_candlestick_weight": 0.0,
+        "chart_moving_average_weight": 0.0,
+        "chart_bollinger_bands_weight": 0.0,
+        "chart_rsi_weight": 0.0,
+        "chart_fibonacci_weight": 0.0,
+        "chart_macd_weight": 0.0,
+        "chart_support_resistance_weight": 0.0
+    },
+    "reasoning": "Provide a single reason for all weight adjustments",
+    "overall_retrospective": "Overall thoughts on the performance and suggestions for improvement"
+}
+
+The sum of all weights must always equal 100%. Please provide your adjustments directly in the format above.

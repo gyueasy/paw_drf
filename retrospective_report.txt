@@ -1,0 +1,43 @@
+Raw API response:
+```json
+{
+    "analysis": "The actual price change of 0.09% aligns closely with the previous recommendation to buy, supported by high prediction accuracy and bullish market conditions. However, given the marginal price change, it suggests a need to balance the weight allocation towards more stable indicators.",
+    "weight_adjustments": {
+        "overall_weight": 5.0,
+        "fear_greed_index_weight": 15.0,
+        "news_weight": 20.0,
+        "chart_overall_weight": 10.0,
+        "chart_technical_weight": 15.0,
+        "chart_candlestick_weight": 5.0,
+        "chart_moving_average_weight": 5.0,
+        "chart_bollinger_bands_weight": 5.0,
+        "chart_rsi_weight": 5.0,
+        "chart_fibonacci_weight": 5.0,
+        "chart_macd_weight": 5.0,
+        "chart_support_resistance_weight": 5.0
+    },
+    "reasoning": "The marginal price change indicates the need to prioritize broader market sentiment and news impact while maintaining a balance with technical analyses to improve prediction outcomes.",
+    "overall_retrospective": "Overall, the analysis performed well, showing correct recommendations and high accuracy. However, the small price movement highlights the need to place greater emphasis on news sentiment and fear/greed indicators as they can significantly influence price changes in uncertain markets."
+}
+```
+
+Cleaned and parsed response:
+{
+  "analysis": "The actual price change of 0.09% aligns closely with the previous recommendation to buy, supported by high prediction accuracy and bullish market conditions. However, given the marginal price change, it suggests a need to balance the weight allocation towards more stable indicators.",
+  "weight_adjustments": {
+    "overall_weight": 5.0,
+    "fear_greed_index_weight": 15.0,
+    "news_weight": 20.0,
+    "chart_overall_weight": 10.0,
+    "chart_technical_weight": 15.0,
+    "chart_candlestick_weight": 5.0,
+    "chart_moving_average_weight": 5.0,
+    "chart_bollinger_bands_weight": 5.0,
+    "chart_rsi_weight": 5.0,
+    "chart_fibonacci_weight": 5.0,
+    "chart_macd_weight": 5.0,
+    "chart_support_resistance_weight": 5.0
+  },
+  "reasoning": "The marginal price change indicates the need to prioritize broader market sentiment and news impact while maintaining a balance with technical analyses to improve prediction outcomes.",
+  "overall_retrospective": "Overall, the analysis performed well, showing correct recommendations and high accuracy. However, the small price movement highlights the need to place greater emphasis on news sentiment and fear/greed indicators as they can significantly influence price changes in uncertain markets."
+}

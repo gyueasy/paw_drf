@@ -61,7 +61,7 @@ IP_CHECK_PATHS = [
 SCHEDULER_TIMEZONE = "Asia/Seoul"
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-SECURE_SSL_REDIRECT = True # 로드밸랜서에서 ssl 처리
+#SECURE_SSL_REDIRECT = True # 로드밸랜서에서 ssl 처리
 
 # Session 설정
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'
@@ -70,7 +70,7 @@ SESSION_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설�
 SESSION_COOKIE_HTTPONLY = True
 
 CSRF_USE_SESSIONS = True
-CSRF_COOKIE_SECURE = False  # HTTPS를 사용하는 경우에만 True로 설정, 개발환경에선 False
+CSRF_COOKIE_SECURE = True  # HTTPS를 사용하는 경우에만 True로 설정, 개발환경에선 False
 CSRF_TRUSTED_ORIGINS = ['https://predictwise.site', 'https://www.predictwise.site', 'https://pawdrf1-677778068.ap-northeast-2.elb.amazonaws.com']
 CORS_ALLOW_ALL_ORIGINS = True
 
@@ -326,24 +326,24 @@ USE_TZ = True
 # }
 
 #디버깅 Logging 배포환경에서 다시 킴
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'file': {
-#             'level': 'DEBUG',
-#             'class': 'logging.FileHandler',
-#             'filename': os.path.join(BASE_DIR, 'logs', 'django_debug.log'),
-#         },
-#     },
-#     'loggers': {
-#         'django': {
-#             'handlers': ['file'],
-#             'level': 'DEBUG',
-#             'propagate': True,
-#         },
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'logs', 'django_debug.log'),
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 
 
 # Static files (CSS, JavaScript, Images)

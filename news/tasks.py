@@ -12,17 +12,25 @@ openai.api_key = settings.OPENAI_API_KEY
 @shared_task
 def fetch_crypto_news():
     feeds = News.objects.filter(is_active=True)
+    if not feeds.exists():
+        default_feeds = [
+            {'name': 'CoinDesk', 'url': 'https://www.coindesk.com/arc/outboundfeeds/rss/'},
+            {'name': 'Cointelegraph', 'url': 'https://cointelegraph.com/rss'}
+        ]
+    else:
+        default_feeds = [{'name': feed.name, 'url': feed.url} for feed in feeds]
+
     kr_tz = timezone('Asia/Seoul')
     news_items = []
 
-    for feed in feeds:
-        parsed_feed = feedparser.parse(feed.url)
+    for feed in default_feeds:
+        parsed_feed = feedparser.parse(feed['url'])
 
         for entry in parsed_feed.entries:
             title = entry.title
             link = entry.link
 
-            if feed.name == 'CoinDesk':
+            if feed['name'] == 'CoinDesk':
                 utc_time = datetime(*entry.published_parsed[:6])
             else:  # Cointelegraph
                 utc_time = datetime.strptime(entry.published, "%a, %d %b %Y %H:%M:%S %z")
@@ -30,12 +38,14 @@ def fetch_crypto_news():
             published = kr_time
 
             summary = entry.summary if 'summary' in entry else "요약 정보 없음"
-            image_url = extract_image_url(entry, feed.name)
+            image_url = extract_image_url(entry, feed['name'])
+
+            news_feed, _ = News.objects.get_or_create(name=feed['name'], defaults={'url': feed['url'], 'is_active': True})
 
             news_item, created = NewsItem.objects.update_or_create(
                 link=link,
                 defaults={
-                    'feed': feed,
+                    'feed': news_feed,
                     'title': title,
                     'content': summary,
                     'published_date': published,
