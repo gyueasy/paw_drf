@@ -27,4 +27,6 @@ urlpatterns = [
     path("api/reports/", include("reports.urls")),
     path("api/health/", views.health_check),
     path("api/test-redis/", views.test_redis_cache),
+    path('api/discussions/', include('discussions.urls')),
+    path('api/news/', include('news.urls')),
 ]
